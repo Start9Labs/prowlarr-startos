@@ -1,0 +1,11 @@
+{
+  "name": "prowlarr-startos",
+  "dependencies": {
+    "@start9labs/start-sdk": "3.1.1",
+    "radarr-startos": "github:Start9Labs/radarr-startos#next",
+    "sonarr-startos": "github:Start9Labs/sonarr-startos#next"
+  },
+  "overrides": {
+    "@start9labs/start-sdk": "$@start9labs/start-sdk"
+  }
+}
