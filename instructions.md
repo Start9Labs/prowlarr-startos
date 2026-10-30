@@ -25,7 +25,7 @@
 ### Actions
 
 - **Set Admin Password** / **Reset Admin Password** — generates a new password for the `admin` account. Run it again whenever you need a new one; the old password stops working and Prowlarr restarts.
-- **Connect Apps** — select the apps on this server that Prowlarr keeps in sync with its indexers. Deselect an app to disconnect it. Prowlarr restarts when the selection changes, and a selected app must be running for its indexers to sync.
+- **Connect Apps** — select the apps on this server that Prowlarr keeps in sync with its indexers. Prowlarr restarts when the selection changes, and a selected app must be running for its indexers to sync. Deselecting an app stops the syncing, but the indexers Prowlarr already added to that app stay there and keep searching through Prowlarr. To remove them, delete the indexers whose names end in **(Prowlarr)** in that app's **Settings → Indexers**.
 
 ## Limitations
 
