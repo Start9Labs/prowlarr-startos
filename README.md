@@ -116,7 +116,7 @@ Prowlarr's first-run "create credentials" modal is never shown: install generate
 Two user-facing actions; both may run while Prowlarr is running or stopped.
 
 - **Set Admin Password** (`set-admin-password`, shown as **Reset Admin Password** once set) — run on first install and whenever the user has lost the password. Generates a 32-character password, stores it, and returns `admin` plus the password, once. If Prowlarr is running it restarts (a few seconds) and the new password applies on start; if stopped, it applies on the next start. Every run invalidates the previous password.
-- **Connect Apps** (`connect-apps`) — a multiselect of Sonarr and Radarr, prefilled from `store.json`. Run it after installing either app, or to disconnect one. Selecting an app declares the dependency and creates its record on the next start; deselecting removes the dependency and deletes the record the package made. Idempotent: resubmitting the same selection does not restart. A changed selection restarts Prowlarr if running.
+- **Connect Apps** (`connect-apps`) — a multiselect of Sonarr and Radarr, prefilled from `store.json`. Run it after installing either app, or to stop syncing to one. Selecting an app declares the dependency and creates its record on the next start; deselecting removes the dependency and deletes the record the package made. Deleting the record only stops the syncing: the indexers Prowlarr already synced into the app (named `<indexer> (Prowlarr)`) stay in its **Settings → Indexers** and keep searching through Prowlarr until removed there. Idempotent: resubmitting the same selection does not restart. A changed selection restarts Prowlarr if running.
 
 ## Tasks
 
