@@ -26,9 +26,9 @@ const dict = {
 
   // actions/connectApps.ts
   Apps: 15,
-  'Apps on this server that Prowlarr keeps in sync with its indexers. Deselecting an app removes it from Prowlarr.': 16,
+  'Apps on this server that Prowlarr keeps in sync with its indexers, and Byparr, which gets Prowlarr past Cloudflare challenges. Deselecting an app removes it from Prowlarr.': 16,
   'Connect Apps': 17,
-  'Choose which apps on this server Prowlarr syncs its indexers to. Changing the selection restarts Prowlarr.': 18,
+  'Choose which apps on this server Prowlarr syncs its indexers to, and whether it solves Cloudflare challenges through Byparr. Changing the selection restarts Prowlarr.': 18,
 } as const
 
 /**

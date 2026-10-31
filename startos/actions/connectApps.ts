@@ -8,9 +8,9 @@ export const inputSpec = InputSpec.of({
   connectedApps: Value.multiselect({
     name: i18n('Apps'),
     description: i18n(
-      'Apps on this server that Prowlarr keeps in sync with its indexers. Deselecting an app removes it from Prowlarr.',
+      'Apps on this server that Prowlarr keeps in sync with its indexers, and Byparr, which gets Prowlarr past Cloudflare challenges. Deselecting an app removes it from Prowlarr.',
     ),
-    values: { sonarr: 'Sonarr', radarr: 'Radarr' },
+    values: { sonarr: 'Sonarr', radarr: 'Radarr', byparr: 'Byparr' },
     default: [],
   }),
 })
@@ -20,7 +20,7 @@ export const connectApps = sdk.Action.withInput(
   async () => ({
     name: i18n('Connect Apps'),
     description: i18n(
-      'Choose which apps on this server Prowlarr syncs its indexers to. Changing the selection restarts Prowlarr.',
+      'Choose which apps on this server Prowlarr syncs its indexers to, and whether it solves Cloudflare challenges through Byparr. Changing the selection restarts Prowlarr.',
     ),
     warning: null,
     allowedStatuses: 'any',
