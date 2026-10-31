@@ -6,9 +6,10 @@ const nullableId = z.number().nullable().catch(null)
 const shape = z.looseObject({
   apiKey: z.string().catch(''),
   adminPassword: z.string().nullable().catch(null),
-  connectedApps: z.array(z.enum(['sonarr', 'radarr'])).catch([]),
+  connectedApps: z.array(z.enum(['sonarr', 'radarr', 'byparr'])).catch([]),
   sonarrAppId: nullableId,
   radarrAppId: nullableId,
+  byparrProxyId: nullableId,
 })
 
 export type StoreType = z.infer<typeof shape>

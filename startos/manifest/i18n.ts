@@ -47,3 +47,16 @@ export const radarrDescription = {
   fr_FR:
     'Optionnel. Permet à Prowlarr de synchroniser ses indexeurs avec Radarr. À sélectionner dans Connecter les applications.',
 }
+
+export const byparrDescription = {
+  en_US:
+    'Optional. Lets Prowlarr reach indexers behind Cloudflare challenges. Selected in Connect Apps.',
+  es_ES:
+    'Opcional. Permite que Prowlarr acceda a indexadores protegidos por desafíos de Cloudflare. Se selecciona en Conectar aplicaciones.',
+  de_DE:
+    'Optional. Ermöglicht Prowlarr den Zugriff auf Indexer hinter Cloudflare-Prüfungen. Auswahl unter Apps verbinden.',
+  pl_PL:
+    'Opcjonalne. Pozwala Prowlarr korzystać z indeksatorów chronionych wyzwaniami Cloudflare. Wybierane w Połącz aplikacje.',
+  fr_FR:
+    'Optionnel. Permet à Prowlarr d’accéder aux indexeurs protégés par des défis Cloudflare. À sélectionner dans Connecter les applications.',
+}

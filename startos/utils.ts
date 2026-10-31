@@ -12,6 +12,8 @@ import { storeJson } from './fileModels/store.json'
 export const uiPort = 9696
 export const uiHostId = 'ui-multi'
 export const adminUsername = 'admin'
+export const byparrHostId = 'api'
+export const byparrPort = 8191
 
 export const arrApps = [
   { id: 'sonarr', name: 'Sonarr', hostId: sonarrHostId, port: sonarrPort },
@@ -26,6 +28,14 @@ export type ArrConnection = {
   selected: boolean
   apiKey: string | null
   address: string | null
+}
+
+type IndexerProxy = {
+  id: number
+  name: string
+  implementation: string
+  tags: number[]
+  fields: { name: string; value?: unknown }[]
 }
 
 type Application = {
@@ -71,6 +81,7 @@ export async function reconcile(
   adminPassword: string | null,
   prowlarrAddress: string | null,
   connections: ArrConnection[],
+  byparr: { selected: boolean; address: string | null },
 ) {
   if (adminPassword && !(await canLogIn(adminPassword))) {
     const host = await api<object>(apiKey, '/config/host')
@@ -129,12 +140,63 @@ export async function reconcile(
     appIds[id] = record.id
   }
 
+  let byparrProxyId = store?.byparrProxyId ?? null
+  const proxies = await api<IndexerProxy[]>(apiKey, '/indexerproxy')
+  const currentProxy =
+    proxies.find((p) => p.id === byparrProxyId) ??
+    proxies.find(
+      (p) => p.implementation === 'FlareSolverr' && p.name === 'Byparr',
+    )
+
+  if (!byparr.selected) {
+    if (currentProxy && currentProxy.id === byparrProxyId)
+      await api(apiKey, `/indexerproxy/${currentProxy.id}`, 'DELETE')
+    byparrProxyId = null
+  } else if (byparr.address) {
+    const tags = await api<{ id: number; label: string }[]>(apiKey, '/tag')
+    const tagId = (
+      tags.find((t) => t.label === 'byparr') ??
+      (await api<{ id: number }>(apiKey, '/tag', 'POST', { label: 'byparr' }))
+    ).id
+    const template =
+      currentProxy ??
+      (await api<IndexerProxy[]>(apiKey, '/indexerproxy/schema')).find(
+        (s) => s.implementation === 'FlareSolverr',
+      )
+    if (!template) throw new Error('Prowlarr has no FlareSolverr proxy schema')
+    const record =
+      currentProxy ??
+      (await api<IndexerProxy>(apiKey, '/indexerproxy?forceSave=true', 'POST', {
+        ...template,
+        name: 'Byparr',
+        tags: [],
+      }))
+    const body = {
+      ...record,
+      name: 'Byparr',
+      tags: record.tags.includes(tagId) ? record.tags : [...record.tags, tagId],
+      fields: record.fields.map((f) =>
+        f.name === 'host' ? { ...f, value: `http://${byparr.address}/` } : f,
+      ),
+    }
+    byparrProxyId = (
+      await api<IndexerProxy>(
+        apiKey,
+        `/indexerproxy/${record.id}?forceSave=true`,
+        'PUT',
+        body,
+      )
+    ).id
+  }
+
   if (
     appIds.sonarr !== (store?.sonarrAppId ?? null) ||
-    appIds.radarr !== (store?.radarrAppId ?? null)
+    appIds.radarr !== (store?.radarrAppId ?? null) ||
+    byparrProxyId !== (store?.byparrProxyId ?? null)
   )
     await storeJson.merge(effects, {
       sonarrAppId: appIds.sonarr,
       radarrAppId: appIds.radarr,
+      byparrProxyId,
     })
 }

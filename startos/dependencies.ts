@@ -1,6 +1,10 @@
 import { T } from '@start9labs/start-sdk'
 import { storeJson, StoreType } from './fileModels/store.json'
-import { radarrDescription, sonarrDescription } from './manifest/i18n'
+import {
+  byparrDescription,
+  radarrDescription,
+  sonarrDescription,
+} from './manifest/i18n'
 import { sdk } from './sdk'
 
 type Enabled = (options: { effects: T.Effects }) => Promise<boolean>
@@ -37,5 +41,18 @@ export const dependencies = sdk.Dependencies.of()
       kind: 'running',
       healthChecks: ['primary'],
       enabled: selected('radarr'),
+    }),
+  )
+  .addDependency(
+    sdk.Dependency.optional('byparr', {
+      description: byparrDescription,
+      metadata: {
+        title: 'Byparr',
+        icon: 'https://raw.githubusercontent.com/ThePhaseless/Byparr/3a45795db314b3fe573959791b2454ea4c1198f8/icon/logo-byparr.svg',
+      },
+      versionRange: '>=3.0.4:0',
+      kind: 'running',
+      healthChecks: ['primary'],
+      enabled: selected('byparr'),
     }),
   )

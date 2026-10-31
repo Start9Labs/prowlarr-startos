@@ -5,7 +5,14 @@ import { configXml } from './fileModels/config.xml'
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { arrApps, reconcile, uiHostId, uiPort } from './utils'
+import {
+  arrApps,
+  byparrHostId,
+  byparrPort,
+  reconcile,
+  uiHostId,
+  uiPort,
+} from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting Prowlarr!'))
@@ -56,6 +63,18 @@ export const main = sdk.setupMain(async ({ effects }) => {
       ]),
     ),
   )
+
+  const byparrSelected = store.connectedApps.includes('byparr')
+  const byparrAddress = byparrSelected
+    ? await sdk.host
+        .getBridgeAddress(effects, {
+          packageId: 'byparr',
+          hostId: byparrHostId,
+          internalPort: byparrPort,
+          ssl: false,
+        })
+        .const()
+    : null
 
   let mounts = sdk.Mounts.of().mountVolume({
     volumeId: 'main',
@@ -134,6 +153,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
                   : null,
               })),
             ),
+            { selected: byparrSelected, address: byparrAddress },
           )
           return null
         },

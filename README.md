@@ -9,7 +9,7 @@
 > documentation is accurate and fully applicable — see the Documentation section of
 > `instructions.md` for links.
 
-[Prowlarr](https://github.com/Prowlarr/Prowlarr) is an indexer manager that syncs torrent trackers and Usenet indexers to Sonarr, Radarr and other media apps. This package owns Prowlarr's API key and admin login, and connects it to the Sonarr and Radarr packages on the same server, reading their API keys itself.
+[Prowlarr](https://github.com/Prowlarr/Prowlarr) is an indexer manager that syncs torrent trackers and Usenet indexers to Sonarr, Radarr and other media apps. This package owns Prowlarr's API key and admin login, and connects it to the Sonarr and Radarr packages on the same server, reading their API keys itself, and to the Byparr package as its FlareSolverr indexer proxy.
 
 ---
 
@@ -70,12 +70,13 @@ Two files: Prowlarr's own `config.xml`, and the package's `store.json`.
 
 **`store.json`** (JSON, at the volume root):
 
-| Key                          | Written by                  | Meaning                                                    |
-| ---------------------------- | --------------------------- | ---------------------------------------------------------- |
-| `apiKey`                     | install init (32 hex chars) | Prowlarr's API key; re-asserted into `config.xml` on start |
-| `adminPassword`              | Set Admin Password          | password of the `admin` user, in plaintext                 |
-| `connectedApps`              | Connect Apps                | the apps selected for connection: `sonarr`, `radarr`       |
-| `sonarrAppId`, `radarrAppId` | the `reconcile` oneshot     | id of the Prowlarr application record the package manages  |
+| Key                          | Written by                  | Meaning                                                        |
+| ---------------------------- | --------------------------- | -------------------------------------------------------------- |
+| `apiKey`                     | install init (32 hex chars) | Prowlarr's API key; re-asserted into `config.xml` on start     |
+| `adminPassword`              | Set Admin Password          | password of the `admin` user, in plaintext                     |
+| `connectedApps`              | Connect Apps                | the apps selected for connection: `sonarr`, `radarr`, `byparr` |
+| `sonarrAppId`, `radarrAppId` | the `reconcile` oneshot     | id of the Prowlarr application record the package manages      |
+| `byparrProxyId`              | the `reconcile` oneshot     | id of the Prowlarr indexer proxy the package manages           |
 
 On every start, `reconcile`:
 
@@ -84,18 +85,21 @@ On every start, `reconcile`:
 
 The records are written with `forceSave=true` and created disabled first, because Prowlarr runs a connection test on creating an enabled application and rejects it when the app is stopped. A connection failure is therefore not an error for `reconcile`; it shows up in Prowlarr's own health page instead.
 
+3. For Byparr: when it is selected and installed, ensures a tag labelled `byparr` exists and creates (if needed) and updates an indexer proxy named `Byparr`, implementation FlareSolverr, with `host` set to Byparr's bridge address (`http://10.0.3.1:<assigned port>/`) and the `byparr` tag added to its tags. Other fields (request timeout, extra tags) are left as the user set them. A pre-existing FlareSolverr proxy named `Byparr` is adopted. When Byparr is deselected, it deletes the proxy whose id it stored; the tag stays, and indexers keep it. Prowlarr uses a FlareSolverr proxy only for indexers sharing one of its tags, so an untagged indexer never reaches Byparr. Created without tags first, then updated with `forceSave=true`, so a stopped Byparr is not an error.
+
 `adminPassword`, `apiKey`, `connectedApps` and the selected apps' bridge addresses are read reactively by `main`, so changing any of them restarts Prowlarr and re-runs `reconcile`. The API key file itself is not watched; the bridge address stands in for it. Uninstalling a selected app removes its address and reinstalling it brings one back, each restarting Prowlarr, so a reinstalled app's new key is picked up without a manual restart. A key Sonarr or Radarr changed in place (not by a reinstall) reaches Prowlarr on its next restart.
 
 ## Dependencies
 
-Sonarr and Radarr, both optional, each declared only while selected in **Connect Apps**.
+Sonarr, Radarr and Byparr, all optional, each declared only while selected in **Connect Apps**.
 
 | Dependency | Kind      | Health checks | Mount                                                      | Why                                                  |
 | ---------- | --------- | ------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
 | `sonarr`   | `running` | `primary`     | its `startos` volume, `share/`, read-only at `/mnt/sonarr` | read its API key (`api-key`); Prowlarr calls its API |
 | `radarr`   | `running` | `primary`     | its `startos` volume, `share/`, read-only at `/mnt/radarr` | read its API key (`api-key`); Prowlarr calls its API |
+| `byparr`   | `running` | `primary`     | none                                                       | Prowlarr sends Cloudflare-challenged requests to it  |
 
-The host id and internal port of each are imported from that package (`ui-multi`; 8989 and 7878), and its address is its bridge address. The mount is added only while that bridge address resolves, i.e. while the app is installed, so a selected app that is not installed never blocks Prowlarr from starting.
+The host id and internal port of Sonarr and Radarr are imported from those packages (`ui-multi`; 8989 and 7878); Byparr's (`api`, 8191) are constants in `startos/utils.ts`. Each address is the dependency's bridge address. The Sonarr and Radarr mounts are added only while that bridge address resolves, i.e. while the app is installed, so a selected app that is not installed never blocks Prowlarr from starting.
 
 ## Network Access and Interfaces
 
@@ -116,7 +120,7 @@ Prowlarr's first-run "create credentials" modal is never shown: install generate
 Two user-facing actions; both may run while Prowlarr is running or stopped.
 
 - **Set Admin Password** (`set-admin-password`, shown as **Reset Admin Password** once set) — run on first install and whenever the user has lost the password. Generates a 32-character password, stores it, and returns `admin` plus the password, once. If Prowlarr is running it restarts (a few seconds) and the new password applies on start; if stopped, it applies on the next start. Every run invalidates the previous password.
-- **Connect Apps** (`connect-apps`) — a multiselect of Sonarr and Radarr, prefilled from `store.json`. Run it after installing either app, or to stop syncing to one. Selecting an app declares the dependency and creates its record on the next start; deselecting removes the dependency and deletes the record the package made. Deleting the record only stops the syncing: the indexers Prowlarr already synced into the app (named `<indexer> (Prowlarr)`) stay in its **Settings → Indexers** and keep searching through Prowlarr until removed there. Idempotent: resubmitting the same selection does not restart. A changed selection restarts Prowlarr if running.
+- **Connect Apps** (`connect-apps`) — a multiselect of Sonarr, Radarr and Byparr, prefilled from `store.json`. Run it after installing either app, or to stop syncing to one. Selecting an app declares the dependency and creates its record on the next start; deselecting removes the dependency and deletes the record the package made. Deleting the record only stops the syncing: the indexers Prowlarr already synced into the app (named `<indexer> (Prowlarr)`) stay in its **Settings → Indexers** and keep searching through Prowlarr until removed there. Idempotent: resubmitting the same selection does not restart. A changed selection restarts Prowlarr if running.
 
 ## Tasks
 
@@ -144,7 +148,7 @@ A restored instance needs nothing re-entered: the admin password, API key and ap
 
 1. Authentication method, port, bind address, URL base, trusted networks and the API key are owned by the package; changing them in **Settings → General** reverts on the next start.
 2. The admin username is always `admin`, and a password changed in the Prowlarr UI is reset to the stored one on the next start.
-3. The **Sonarr** and **Radarr** application records the package manages have their URLs, API key and sync level re-asserted on every start while selected.
+3. The **Sonarr** and **Radarr** application records the package manages have their URLs, API key and sync level re-asserted on every start while selected; the **Byparr** indexer proxy has its host and `byparr` tag re-asserted the same way.
 4. Built-in updates are disabled (`UpdateMechanism=Docker`); Prowlarr updates with the package.
 5. Only Sonarr and Radarr on the same server are connected automatically. Other apps (Lidarr, Readarr, a Sonarr elsewhere) are added in Prowlarr's UI as upstream documents.
 
@@ -166,7 +170,7 @@ startos_managed_env_vars:
   - PUID
   - PGID
   - TZ
-dependencies: [sonarr, radarr] # both optional, enabled by connect-apps
+dependencies: [sonarr, radarr, byparr] # all optional, enabled by connect-apps
 interfaces:
   ui: { type: ui, port: 9696 }
 actions:
