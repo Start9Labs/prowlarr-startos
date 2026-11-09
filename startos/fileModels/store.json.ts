@@ -6,9 +6,12 @@ const nullableId = z.number().nullable().catch(null)
 const shape = z.looseObject({
   apiKey: z.string().catch(''),
   adminPassword: z.string().nullable().catch(null),
-  connectedApps: z.array(z.enum(['sonarr', 'radarr', 'byparr'])).catch([]),
+  connectedApps: z
+    .array(z.enum(['sonarr', 'radarr', 'lidarr', 'byparr']))
+    .catch([]),
   sonarrAppId: nullableId,
   radarrAppId: nullableId,
+  lidarrAppId: nullableId,
   byparrProxyId: nullableId,
 })
 

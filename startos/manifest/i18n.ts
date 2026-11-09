@@ -48,6 +48,19 @@ export const radarrDescription = {
     'Optionnel. Permet à Prowlarr de synchroniser ses indexeurs avec Radarr. À sélectionner dans Connecter les applications.',
 }
 
+export const lidarrDescription = {
+  en_US:
+    'Optional. Lets Prowlarr sync its indexers to Lidarr. Selected in Connect Apps.',
+  es_ES:
+    'Opcional. Permite que Prowlarr sincronice sus indexadores con Lidarr. Se selecciona en Conectar aplicaciones.',
+  de_DE:
+    'Optional. Ermöglicht Prowlarr, seine Indexer mit Lidarr zu synchronisieren. Auswahl unter Apps verbinden.',
+  pl_PL:
+    'Opcjonalne. Pozwala Prowlarr synchronizować indeksatory z Lidarr. Wybierane w Połącz aplikacje.',
+  fr_FR:
+    'Optionnel. Permet à Prowlarr de synchroniser ses indexeurs avec Lidarr. À sélectionner dans Connecter les applications.',
+}
+
 export const byparrDescription = {
   en_US:
     'Optional. Lets Prowlarr reach indexers behind Cloudflare challenges. Selected in Connect Apps.',

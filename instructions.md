@@ -11,14 +11,14 @@
 ## What you get on StartOS
 
 - The Prowlarr **Web UI**, protected by a login StartOS creates for you.
-- A **Connect Apps** action that links Prowlarr to Sonarr and Radarr installed on this server, so every indexer you add in Prowlarr is synced to them automatically, and to Byparr, so Prowlarr can reach indexers behind Cloudflare challenges.
+- A **Connect Apps** action that links Prowlarr to Sonarr, Radarr and Lidarr installed on this server, so compatible indexers you add in Prowlarr are synced to them automatically, and to Byparr, so Prowlarr can reach indexers behind Cloudflare challenges.
 
 ## Getting set up
 
 1. Run **Set Admin Password**. Copy the username and password it shows you — this is the only time the password is displayed.
 2. Start Prowlarr and open the **Web UI**. Sign in with those credentials.
 3. Add your indexers under **Indexers → Add Indexer**.
-4. If you use Sonarr or Radarr on this server, run **Connect Apps** and select them. Prowlarr then syncs your indexers to them; there are no API keys to copy.
+4. If you use Sonarr, Radarr or Lidarr on this server, run **Connect Apps** and select them. Prowlarr then syncs your indexers to them; there are no API keys to copy.
 5. If an indexer fails with a Cloudflare error, install Byparr, select it in **Connect Apps**, then edit that indexer in Prowlarr and add the **byparr** tag. Only indexers carrying that tag go through Byparr. Byparr's own instructions explain how to route the two apps so the challenge result is accepted.
 
 ## Using Prowlarr
@@ -31,5 +31,5 @@
 ## Limitations
 
 - The login, port, and API key are managed by StartOS. Changing authentication, the port, the URL base, or regenerating the API key in Prowlarr's **Settings → General** is undone the next time Prowlarr starts.
-- The applications named **Sonarr** and **Radarr** that Connect Apps creates are managed by StartOS. Edits to their address, API key, or sync level in **Settings → Apps** are undone the next time Prowlarr starts while that app is connected.
+- The applications named **Sonarr**, **Radarr** and **Lidarr** that Connect Apps creates are managed by StartOS. Edits to their address, API key, or sync level in **Settings → Apps** are undone the next time Prowlarr starts while that app is connected.
 - The **Byparr** indexer proxy is managed by StartOS too. Its address and its **byparr** tag are restored the next time Prowlarr starts while Byparr is connected; other settings, such as the request timeout, are yours.

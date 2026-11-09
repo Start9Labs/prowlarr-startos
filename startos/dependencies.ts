@@ -2,6 +2,7 @@ import { T } from '@start9labs/start-sdk'
 import { storeJson, StoreType } from './fileModels/store.json'
 import {
   byparrDescription,
+  lidarrDescription,
   radarrDescription,
   sonarrDescription,
 } from './manifest/i18n'
@@ -41,6 +42,19 @@ export const dependencies = sdk.Dependencies.of()
       kind: 'running',
       healthChecks: ['primary'],
       enabled: selected('radarr'),
+    }),
+  )
+  .addDependency(
+    sdk.Dependency.optional('lidarr', {
+      description: lidarrDescription,
+      metadata: {
+        title: 'Lidarr',
+        icon: 'https://raw.githubusercontent.com/Lidarr/Lidarr/da7b4dfb1a9e7e1d6625c2dbc3fff96971ab26bd/Logo/Lidarr.svg',
+      },
+      versionRange: '>=3.1.6.5079:0',
+      kind: 'running',
+      healthChecks: ['primary'],
+      enabled: selected('lidarr'),
     }),
   )
   .addDependency(
