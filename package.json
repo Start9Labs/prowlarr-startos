@@ -2,6 +2,7 @@
   "name": "prowlarr-startos",
   "dependencies": {
     "@start9labs/start-sdk": "4.0.0",
+    "lidarr-startos": "github:Start9Labs/lidarr-startos#next",
     "radarr-startos": "github:Start9Labs/radarr-startos#next",
     "sonarr-startos": "github:Start9Labs/sonarr-startos#next"
   },

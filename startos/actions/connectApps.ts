@@ -10,7 +10,12 @@ export const inputSpec = InputSpec.of({
     description: i18n(
       'Apps on this server that Prowlarr keeps in sync with its indexers, and Byparr, which gets Prowlarr past Cloudflare challenges. Deselecting an app removes it from Prowlarr.',
     ),
-    values: { sonarr: 'Sonarr', radarr: 'Radarr', byparr: 'Byparr' },
+    values: {
+      sonarr: 'Sonarr',
+      radarr: 'Radarr',
+      lidarr: 'Lidarr',
+      byparr: 'Byparr',
+    },
     default: [],
   }),
 })

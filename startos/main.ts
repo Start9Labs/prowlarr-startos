@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { manifest as lidarrManifest } from 'lidarr-startos/startos/manifest'
 import { manifest as radarrManifest } from 'radarr-startos/startos/manifest'
 import { manifest as sonarrManifest } from 'sonarr-startos/startos/manifest'
 import { configXml } from './fileModels/config.xml'
@@ -96,6 +97,14 @@ export const main = sdk.setupMain(async ({ effects }) => {
       volumeId: 'startos',
       subpath: 'share',
       mountpoint: '/mnt/radarr',
+      readonly: true,
+    })
+  if (addresses.lidarr)
+    mounts = mounts.mountDependency<typeof lidarrManifest>({
+      dependencyId: 'lidarr',
+      volumeId: 'startos',
+      subpath: 'share',
+      mountpoint: '/mnt/lidarr',
       readonly: true,
     })
 

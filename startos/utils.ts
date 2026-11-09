@@ -1,5 +1,9 @@
 import { T } from '@start9labs/start-sdk'
 import {
+  uiHostId as lidarrHostId,
+  uiPort as lidarrPort,
+} from 'lidarr-startos/startos/utils'
+import {
   uiHostId as radarrHostId,
   uiPort as radarrPort,
 } from 'radarr-startos/startos/utils'
@@ -18,6 +22,7 @@ export const byparrPort = 8191
 export const arrApps = [
   { id: 'sonarr', name: 'Sonarr', hostId: sonarrHostId, port: sonarrPort },
   { id: 'radarr', name: 'Radarr', hostId: radarrHostId, port: radarrPort },
+  { id: 'lidarr', name: 'Lidarr', hostId: lidarrHostId, port: lidarrPort },
 ] as const
 
 export type ArrId = (typeof arrApps)[number]['id']
@@ -99,6 +104,7 @@ export async function reconcile(
   const appIds: Record<ArrId, number | null> = {
     sonarr: store?.sonarrAppId ?? null,
     radarr: store?.radarrAppId ?? null,
+    lidarr: store?.lidarrAppId ?? null,
   }
   const existing = await api<Application[]>(apiKey, '/applications')
 
@@ -192,11 +198,13 @@ export async function reconcile(
   if (
     appIds.sonarr !== (store?.sonarrAppId ?? null) ||
     appIds.radarr !== (store?.radarrAppId ?? null) ||
+    appIds.lidarr !== (store?.lidarrAppId ?? null) ||
     byparrProxyId !== (store?.byparrProxyId ?? null)
   )
     await storeJson.merge(effects, {
       sonarrAppId: appIds.sonarr,
       radarrAppId: appIds.radarr,
+      lidarrAppId: appIds.lidarr,
       byparrProxyId,
     })
 }
