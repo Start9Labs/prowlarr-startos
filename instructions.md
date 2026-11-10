@@ -23,6 +23,12 @@
 
 ## Using Prowlarr
 
+### Shelfarr searches
+
+If you use Shelfarr on this server, run **Connect Prowlarr** in Shelfarr after adding your indexers here. The connection shares the API key automatically; there is no key to copy.
+
+Shelfarr searches Prowlarr directly rather than receiving synced indexers. Do not look for Shelfarr in Prowlarr's **Connect Apps** action or add it under **Settings → Apps**: Prowlarr has no Shelfarr sync provider. The connection shares Prowlarr's API key, not your admin password.
+
 ### Actions
 
 - **Set Admin Password** / **Reset Admin Password** — generates a new password for the `admin` account. Run it again whenever you need a new one; the old password stops working and Prowlarr restarts.

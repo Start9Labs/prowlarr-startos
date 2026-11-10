@@ -5,6 +5,7 @@ import { versionGraph } from '../versions'
 import { actions } from '../actions'
 import { restoreInit } from '../backups'
 import { seedFiles } from './seedFiles'
+import { shareApiKey } from './shareApiKey'
 import { watchAdminPassword } from './watchAdminPassword'
 
 export const init = sdk.setupInit(
@@ -14,6 +15,7 @@ export const init = sdk.setupInit(
   actions,
   dependencies,
   seedFiles,
+  shareApiKey,
   watchAdminPassword,
 )
 
