@@ -10,7 +10,7 @@ export const manifest = setupManifest({
   marketingUrl: 'https://prowlarr.com/',
   donationUrl: 'https://prowlarr.com/donate',
   description: { short, long },
-  volumes: ['main', 'startos'],
+  volumes: ['main', 'public'],
   images: {
     prowlarr: {
       source: { dockerTag: 'lscr.io/linuxserver/prowlarr:2.7.0.5723-ls167' },

@@ -49,14 +49,14 @@ After `primary` is ready, a `reconcile` oneshot runs in the package's JavaScript
 
 ## Volume and Data Layout
 
-Prowlarr's data and private package state live on `main`. A separate `startos` volume carries only the API key export for dependents; Prowlarr's subcontainer does not mount it.
+Prowlarr's data and private package state live on `main`. A separate `public` volume carries only the API key export for dependents; Prowlarr's subcontainer does not mount it.
 
 | Path on `main` | Mounted at  | Contents                                                                                                                           |
 | -------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `config/`      | `/config`   | Prowlarr's app data: `config.xml`, `prowlarr.db` and `logs.db` (SQLite), `Definitions/`, `asp/` (cookie keys), `logs/`, `Backups/` |
 | `store.json`   | not mounted | StartOS-side state (see below)                                                                                                     |
 
-On `startos`, `share/api-key` contains the stored Prowlarr API key as plain text. Dependents mount only `share/`, read-only, never `main` or the whole `startos` volume. This exposes neither `store.json` nor the admin password.
+On `public`, `api-key` contains the stored Prowlarr API key as plain text. Dependents mount `public` read-only, never `main`. This exposes neither `store.json` nor the admin password.
 
 The image chowns `/config` to `PUID:PGID` on every start, so files written by the package as root are fixed up before Prowlarr runs.
 
@@ -91,7 +91,7 @@ The records are written with `forceSave=true` and created disabled first, becaus
 
 `adminPassword`, `apiKey`, `connectedApps` and the selected apps' bridge addresses are read reactively by `main`, so changing any of them restarts Prowlarr and re-runs `reconcile`. The API key file itself is not watched; the bridge address stands in for it. Uninstalling a selected app removes its address and reinstalling it brings one back, each restarting Prowlarr, so a reinstalled app's new key is picked up without a manual restart. A key Sonarr, Radarr or Lidarr changed in place (not by a reinstall) reaches Prowlarr on its next restart.
 
-**`startos/share/api-key`** (`FileHelper.string`): reactive init copies `main/store.json`'s nonempty `apiKey` on install, update, restore and container rebuild, and republishes it whenever that stored key changes. It does not generate a second key. A manual edit is overwritten on the next init or stored-key change.
+**`public/api-key`** (`FileHelper.string`): reactive init copies `main/store.json`'s nonempty `apiKey` on install, update, restore and container rebuild, and republishes it whenever that stored key changes. It does not generate a second key. A manual edit is overwritten on the next init or stored-key change.
 
 ## Dependencies
 
@@ -149,7 +149,7 @@ The `main` volume is copied wholesale (`ofVolumes`), with Prowlarr stopped.
 
 Excluded, because Prowlarr regenerates them on start: `config/logs/`, `config/logs.db*` (the log database), `config/Sentry/`. Everything else — `prowlarr.db`, `config.xml`, `Definitions/` (including any custom definitions), `asp/` cookie keys, Prowlarr's own `Backups/` and `store.json` — is included.
 
-A restored instance needs nothing re-entered: the admin password, API key and app selection come back with `store.json`. The `startos` volume is not backed up: init regenerates its derived `share/api-key` from the restored store. On the first start `reconcile` rewrites the Sonarr/Radarr/Lidarr records with the keys and bridge addresses on the restored server.
+A restored instance needs nothing re-entered: the admin password, API key and app selection come back with `store.json`. The `public` volume is not backed up: init regenerates its derived `api-key` from the restored store. On the first start `reconcile` rewrites the Sonarr/Radarr/Lidarr records with the keys and bridge addresses on the restored server.
 
 ## Limitations and Differences
 
@@ -170,11 +170,11 @@ architectures: [x86_64, aarch64]
 subcontainers: [prowlarr-sub]
 volumes:
   main: /config (subpath config)
-  startos: not mounted (share/ exported read-only to dependents)
+  public: not mounted (exported read-only to dependents)
 file_models:
   - main/config/config.xml
   - main/store.json
-  - startos/share/api-key
+  - public/api-key
 startos_managed_env_vars:
   - PUID
   - PGID
