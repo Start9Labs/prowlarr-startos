@@ -43,7 +43,7 @@ The package runs the unmodified linuxserver.io Prowlarr image with its own entry
 
 Subcontainers:
 
-- `prowlarr-sub` — the Prowlarr daemon (`primary`). It also carries the read-only Sonarr/Radarr/Lidarr share mounts (see [Dependencies](#dependencies)). Attach with `start-cli package attach prowlarr -n prowlarr-sub -- <cmd>`; `curl` is available inside.
+- `prowlarr-sub` — the Prowlarr daemon (`primary`). It also carries the read-only Sonarr/Radarr/Lidarr `public` volume mounts (see [Dependencies](#dependencies)). Attach with `start-cli package attach prowlarr -n prowlarr-sub -- <cmd>`; `curl` is available inside.
 
 After `primary` is ready, a `reconcile` oneshot runs in the package's JavaScript runtime (no subcontainer) and drives Prowlarr's API on `127.0.0.1:9696` — see [File Models](#file-models).
 
@@ -72,18 +72,18 @@ Three files: Prowlarr's own `config.xml`, the package's private `store.json`, an
 
 **`store.json`** (JSON, at the volume root):
 
-| Key                          | Written by                  | Meaning                                                        |
-| ---------------------------- | --------------------------- | -------------------------------------------------------------- |
-| `apiKey`                     | install init (32 hex chars) | Prowlarr's API key; re-asserted into `config.xml` on start     |
-| `adminPassword`              | Set Admin Password          | password of the `admin` user, in plaintext                     |
-| `connectedApps`              | Connect Apps                | the apps selected for connection: `sonarr`, `radarr`, `lidarr`, `byparr` |
-| `sonarrAppId`, `radarrAppId`, `lidarrAppId` | the `reconcile` oneshot     | id of the Prowlarr application record the package manages      |
-| `byparrProxyId`              | the `reconcile` oneshot     | id of the Prowlarr indexer proxy the package manages           |
+| Key                                         | Written by                  | Meaning                                                                  |
+| ------------------------------------------- | --------------------------- | ------------------------------------------------------------------------ |
+| `apiKey`                                    | install init (32 hex chars) | Prowlarr's API key; re-asserted into `config.xml` on start               |
+| `adminPassword`                             | Set Admin Password          | password of the `admin` user, in plaintext                               |
+| `connectedApps`                             | Connect Apps                | the apps selected for connection: `sonarr`, `radarr`, `lidarr`, `byparr` |
+| `sonarrAppId`, `radarrAppId`, `lidarrAppId` | the `reconcile` oneshot     | id of the Prowlarr application record the package manages                |
+| `byparrProxyId`                             | the `reconcile` oneshot     | id of the Prowlarr indexer proxy the package manages                     |
 
 On every start, `reconcile`:
 
 1. Tries `POST /login` as `admin` with `adminPassword`; if that fails, applies it through `PUT /api/v1/config/host`. A password changed in the UI is therefore reset to the stored one on the next start.
-2. For each of Sonarr, Radarr and Lidarr: when it is selected and installed, reads its API key from the share mount and creates (if needed) and updates an application record named after the app, implementation Sonarr/Radarr/Lidarr, sync level **Full Sync**, with `baseUrl` and `prowlarrUrl` set to the two packages' bridge addresses (`http://10.0.3.1:<assigned port>`). Other fields (sync categories, tags) are left as the user set them. When the app is deselected, it deletes the record whose id it stored. A selected app that is not installed is left alone. A pre-existing record with the same name and implementation is adopted rather than duplicated. A record it did not create or adopt is never deleted.
+2. For each of Sonarr, Radarr and Lidarr: when it is selected and installed, reads its API key from its `public` volume mount and creates (if needed) and updates an application record named after the app, implementation Sonarr/Radarr/Lidarr, sync level **Full Sync**, with `baseUrl` and `prowlarrUrl` set to the two packages' bridge addresses (`http://10.0.3.1:<assigned port>`). Other fields (sync categories, tags) are left as the user set them. When the app is deselected, it deletes the record whose id it stored. A selected app that is not installed is left alone. A pre-existing record with the same name and implementation is adopted rather than duplicated. A record it did not create or adopt is never deleted.
 
 The records are written with `forceSave=true` and created disabled first, because Prowlarr runs a connection test on creating an enabled application and rejects it when the app is stopped. A connection failure is therefore not an error for `reconcile`; it shows up in Prowlarr's own health page instead.
 
@@ -97,12 +97,12 @@ The records are written with `forceSave=true` and created disabled first, becaus
 
 Sonarr, Radarr, Lidarr and Byparr, all optional, each declared only while selected in **Connect Apps**.
 
-| Dependency | Kind      | Health checks | Mount                                                      | Why                                                  |
-| ---------- | --------- | ------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
-| `sonarr`   | `running` | `primary`     | its `startos` volume, `share/`, read-only at `/mnt/sonarr` | read its API key (`api-key`); Prowlarr calls its API |
-| `radarr`   | `running` | `primary`     | its `startos` volume, `share/`, read-only at `/mnt/radarr` | read its API key (`api-key`); Prowlarr calls its API |
-| `lidarr`   | `running` | `primary`     | its `startos` volume, `share/`, read-only at `/mnt/lidarr` | read its API key (`api-key`); Prowlarr calls its API |
-| `byparr`   | `running` | `primary`     | none                                                       | Prowlarr sends Cloudflare-challenged requests to it  |
+| Dependency | Kind      | Health checks | Mount                                           | Why                                                  |
+| ---------- | --------- | ------------- | ----------------------------------------------- | ---------------------------------------------------- |
+| `sonarr`   | `running` | `primary`     | its `public` volume, read-only at `/mnt/sonarr` | read its API key (`api-key`); Prowlarr calls its API |
+| `radarr`   | `running` | `primary`     | its `public` volume, read-only at `/mnt/radarr` | read its API key (`api-key`); Prowlarr calls its API |
+| `lidarr`   | `running` | `primary`     | its `public` volume, read-only at `/mnt/lidarr` | read its API key (`api-key`); Prowlarr calls its API |
+| `byparr`   | `running` | `primary`     | none                                            | Prowlarr sends Cloudflare-challenged requests to it  |
 
 The host id and internal port of Sonarr, Radarr and Lidarr are imported from those packages (`ui-multi`; 8989, 7878 and 8686); Byparr's (`api`, 8191) are constants in `startos/utils.ts`. Each address is the dependency's bridge address. The Sonarr, Radarr and Lidarr mounts are added only while that bridge address resolves, i.e. while the app is installed, so a selected app that is not installed never blocks Prowlarr from starting.
 

@@ -86,24 +86,24 @@ export const main = sdk.setupMain(async ({ effects }) => {
   if (addresses.sonarr)
     mounts = mounts.mountDependency<typeof sonarrManifest>({
       dependencyId: 'sonarr',
-      volumeId: 'startos',
-      subpath: 'share',
+      volumeId: 'public',
+      subpath: null,
       mountpoint: '/mnt/sonarr',
       readonly: true,
     })
   if (addresses.radarr)
     mounts = mounts.mountDependency<typeof radarrManifest>({
       dependencyId: 'radarr',
-      volumeId: 'startos',
-      subpath: 'share',
+      volumeId: 'public',
+      subpath: null,
       mountpoint: '/mnt/radarr',
       readonly: true,
     })
   if (addresses.lidarr)
     mounts = mounts.mountDependency<typeof lidarrManifest>({
       dependencyId: 'lidarr',
-      volumeId: 'startos',
-      subpath: 'share',
+      volumeId: 'public',
+      subpath: null,
       mountpoint: '/mnt/lidarr',
       readonly: true,
     })
