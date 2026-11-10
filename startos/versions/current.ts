@@ -1,18 +1,18 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '2.7.0.5723:3',
+  version: '2.7.0.5723:4',
   releaseNotes: {
     en_US:
-      'Connect Apps can now sync Prowlarr indexers to Lidarr installed on this server, without copying API keys.',
+      'Shelfarr can search Prowlarr directly without copying API keys. Connect from Shelfarr’s Connect Prowlarr action, not Prowlarr’s Connect Apps; no app sync record is created.',
     es_ES:
-      'Conectar aplicaciones ahora permite sincronizar los indexadores de Prowlarr con Lidarr instalado en este servidor, sin copiar claves API.',
+      'Shelfarr puede buscar directamente en Prowlarr sin copiar claves API. Conecta desde la acción Conectar Prowlarr de Shelfarr, no desde Conectar aplicaciones de Prowlarr; no se crea ningún registro de sincronización de aplicaciones.',
     de_DE:
-      'Apps verbinden kann Prowlarr-Indexer jetzt mit Lidarr auf diesem Server synchronisieren, ohne API-Schlüssel zu kopieren.',
+      'Shelfarr kann Prowlarr direkt durchsuchen, ohne API-Schlüssel zu kopieren. Die Verbindung erfolgt über Prowlarr verbinden in Shelfarr, nicht über Apps verbinden in Prowlarr; es wird kein App-Synchronisierungseintrag erstellt.',
     pl_PL:
-      'Połącz aplikacje pozwala teraz synchronizować indeksatory Prowlarr z Lidarr zainstalowanym na tym serwerze, bez kopiowania kluczy API.',
+      'Shelfarr może wyszukiwać bezpośrednio w Prowlarr bez kopiowania kluczy API. Połącz przez akcję Połącz Prowlarr w Shelfarr, a nie Połącz aplikacje w Prowlarr; nie powstaje wpis synchronizacji aplikacji.',
     fr_FR:
-      'Connecter les applications permet désormais de synchroniser les indexeurs Prowlarr avec Lidarr installé sur ce serveur, sans copier de clés API.',
+      'Shelfarr peut rechercher directement dans Prowlarr sans copier de clés API. Utilisez l’action Connecter Prowlarr de Shelfarr, et non Connecter les applications de Prowlarr ; aucune entrée de synchronisation d’application n’est créée.',
   },
   migrations: {
     up: async ({ effects }) => {},
