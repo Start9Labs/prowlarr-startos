@@ -1,18 +1,18 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '2.7.0.5723:4',
+  version: '2.7.0.5723:5',
   releaseNotes: {
     en_US:
-      'Shelfarr can search Prowlarr directly without copying API keys. Connect from Shelfarr’s Connect Prowlarr action, not Prowlarr’s Connect Apps; no app sync record is created. Connect Apps now requires Sonarr 4.0.20.3014:7, Radarr 6.4.4.10685:6 and Lidarr 3.1.6.5079:1 or later.',
+      'Updated the Prowlarr 2.7.0.5723 image to LinuxServer build ls168 with refreshed system dependencies. Requires StartOS 0.4.2 or later. Full image release notes: https://github.com/linuxserver/docker-prowlarr/releases/tag/2.7.0.5723-ls168',
     es_ES:
-      'Shelfarr puede buscar directamente en Prowlarr sin copiar claves API. Conecta desde la acción Conectar Prowlarr de Shelfarr, no desde Conectar aplicaciones de Prowlarr; no se crea ningún registro de sincronización de aplicaciones. Conectar aplicaciones ahora requiere Sonarr 4.0.20.3014:7, Radarr 6.4.4.10685:6 y Lidarr 3.1.6.5079:1 o posteriores.',
+      'Actualizada la imagen de Prowlarr 2.7.0.5723 a la compilación ls168 de LinuxServer con dependencias del sistema actualizadas. Requiere StartOS 0.4.2 o posterior. Notas completas de la imagen: https://github.com/linuxserver/docker-prowlarr/releases/tag/2.7.0.5723-ls168',
     de_DE:
-      'Shelfarr kann Prowlarr direkt durchsuchen, ohne API-Schlüssel zu kopieren. Die Verbindung erfolgt über Prowlarr verbinden in Shelfarr, nicht über Apps verbinden in Prowlarr; es wird kein App-Synchronisierungseintrag erstellt. Apps verbinden erfordert jetzt Sonarr 4.0.20.3014:7, Radarr 6.4.4.10685:6 und Lidarr 3.1.6.5079:1 oder neuer.',
+      'Das Image von Prowlarr 2.7.0.5723 wurde auf LinuxServer-Build ls168 mit aktualisierten Systemabhängigkeiten gebracht. Erfordert StartOS 0.4.2 oder neuer. Vollständige Image-Versionshinweise: https://github.com/linuxserver/docker-prowlarr/releases/tag/2.7.0.5723-ls168',
     pl_PL:
-      'Shelfarr może wyszukiwać bezpośrednio w Prowlarr bez kopiowania kluczy API. Połącz przez akcję Połącz Prowlarr w Shelfarr, a nie Połącz aplikacje w Prowlarr; nie powstaje wpis synchronizacji aplikacji. Połącz aplikacje wymaga teraz Sonarr 4.0.20.3014:7, Radarr 6.4.4.10685:6 i Lidarr 3.1.6.5079:1 lub nowszych.',
+      'Zaktualizowano obraz Prowlarr 2.7.0.5723 do kompilacji ls168 LinuxServer z odświeżonymi zależnościami systemowymi. Wymaga StartOS 0.4.2 lub nowszego. Pełne informacje o wydaniu obrazu: https://github.com/linuxserver/docker-prowlarr/releases/tag/2.7.0.5723-ls168',
     fr_FR:
-      'Shelfarr peut rechercher directement dans Prowlarr sans copier de clés API. Utilisez l’action Connecter Prowlarr de Shelfarr, et non Connecter les applications de Prowlarr ; aucune entrée de synchronisation d’application n’est créée. Connecter les applications nécessite désormais Sonarr 4.0.20.3014:7, Radarr 6.4.4.10685:6 et Lidarr 3.1.6.5079:1 ou ultérieurs.',
+      'Image de Prowlarr 2.7.0.5723 mise à jour vers la compilation ls168 de LinuxServer avec des dépendances système actualisées. Nécessite StartOS 0.4.2 ou ultérieur. Notes complètes de l’image : https://github.com/linuxserver/docker-prowlarr/releases/tag/2.7.0.5723-ls168',
   },
   migrations: {
     up: async ({ effects }) => {},
