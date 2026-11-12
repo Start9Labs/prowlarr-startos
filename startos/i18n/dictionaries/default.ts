@@ -29,6 +29,10 @@ const dict = {
   'Apps on this server that Prowlarr keeps in sync with its indexers, and Byparr, which gets Prowlarr past Cloudflare challenges. Deselecting an app removes it from Prowlarr.': 16,
   'Connect Apps': 17,
   'Choose which apps on this server Prowlarr syncs its indexers to, and whether it solves Cloudflare challenges through Byparr. Changing the selection restarts Prowlarr.': 18,
+  'Disconnect NZBGet': 19,
+  'Connect NZBGet': 20,
+  'Send manual Usenet grabs from Prowlarr to NZBGet. Changing the connection restarts Prowlarr.': 21,
+  'Removes only the NZBGet (StartOS) download client.': 22,
 } as const
 
 /**

@@ -1,5 +1,11 @@
 import { T } from '@start9labs/start-sdk'
 import {
+  ArrApi,
+  NzbgetConnection,
+  downloadClientAddressFields,
+  reconcileArrDownloadClient,
+} from 'nzbget-startos/startos/utils'
+import {
   uiHostId as lidarrHostId,
   uiPort as lidarrPort,
 } from 'lidarr-startos/startos/utils'
@@ -87,6 +93,7 @@ export async function reconcile(
   prowlarrAddress: string | null,
   connections: ArrConnection[],
   byparr: { selected: boolean; address: string | null },
+  nzbget: NzbgetConnection,
 ) {
   if (adminPassword && !(await canLogIn(adminPassword))) {
     const host = await api<object>(apiKey, '/config/host')
@@ -101,6 +108,23 @@ export async function reconcile(
   }
 
   const store = await storeJson.read().once()
+  const request: ArrApi = (path, method, body) =>
+    api(apiKey, path, method, body)
+  const nzbgetClientId = await reconcileArrDownloadClient(request, {
+    storedId: store?.nzbgetClientId ?? null,
+    name: 'NZBGet (StartOS)',
+    implementation: 'Nzbget',
+    connected: nzbget.connected,
+    values:
+      nzbget.address && nzbget.credentials
+        ? {
+            ...downloadClientAddressFields(nzbget.address),
+            username: nzbget.credentials.username,
+            password: nzbget.credentials.password,
+          }
+        : null,
+    defaults: { category: 'prowlarr' },
+  })
   const appIds: Record<ArrId, number | null> = {
     sonarr: store?.sonarrAppId ?? null,
     radarr: store?.radarrAppId ?? null,
@@ -199,12 +223,14 @@ export async function reconcile(
     appIds.sonarr !== (store?.sonarrAppId ?? null) ||
     appIds.radarr !== (store?.radarrAppId ?? null) ||
     appIds.lidarr !== (store?.lidarrAppId ?? null) ||
-    byparrProxyId !== (store?.byparrProxyId ?? null)
+    byparrProxyId !== (store?.byparrProxyId ?? null) ||
+    nzbgetClientId !== (store?.nzbgetClientId ?? null)
   )
     await storeJson.merge(effects, {
       sonarrAppId: appIds.sonarr,
       radarrAppId: appIds.radarr,
       lidarrAppId: appIds.lidarr,
       byparrProxyId,
+      nzbgetClientId,
     })
 }

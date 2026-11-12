@@ -13,6 +13,8 @@ const shape = z.looseObject({
   radarrAppId: nullableId,
   lidarrAppId: nullableId,
   byparrProxyId: nullableId,
+  nzbgetConnected: z.boolean().catch(false),
+  nzbgetClientId: nullableId,
 })
 
 export type StoreType = z.infer<typeof shape>

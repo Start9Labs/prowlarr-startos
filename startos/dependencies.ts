@@ -5,6 +5,7 @@ import {
   lidarrDescription,
   radarrDescription,
   sonarrDescription,
+  nzbgetDescription,
 } from './manifest/i18n'
 import { sdk } from './sdk'
 
@@ -18,6 +19,21 @@ const selected =
     ) ?? false
 
 export const dependencies = sdk.Dependencies.of()
+  .addDependency(
+    sdk.Dependency.optional('nzbget', {
+      description: nzbgetDescription,
+      metadata: {
+        title: 'NZBGet',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/nzbget-startos/feat/initial-package/icon.svg',
+      },
+      versionRange: '>=26.3:0',
+      kind: 'running',
+      healthChecks: ['primary'],
+      enabled: async ({ effects }) =>
+        (await storeJson.read((s) => s.nzbgetConnected).const(effects)) ??
+        false,
+    }),
+  )
   .addDependency(
     sdk.Dependency.optional('sonarr', {
       description: sonarrDescription,

@@ -47,6 +47,8 @@ Subcontainers:
 
 After `primary` is ready, a `reconcile` oneshot runs in the package's JavaScript runtime (no subcontainer) and drives Prowlarr's API on `127.0.0.1:9696` — see [File Models](#file-models).
 
+The same oneshot independently reconciles `NZBGet (StartOS)` through the shared Arr download-client primitive. Its restricted credentials come from NZBGet's public export. Creation seeds category `prowlarr`; later categories and non-connection settings remain user-owned. Missing dependency values preserve its existing record until available again.
+
 ## Volume and Data Layout
 
 Prowlarr's data and private package state live on `main`. A separate `public` volume carries only the API key export for dependents; Prowlarr's subcontainer does not mount it.
@@ -57,6 +59,8 @@ Prowlarr's data and private package state live on `main`. A separate `public` vo
 | `store.json`   | not mounted | StartOS-side state (see below)                                                                                                     |
 
 On `public`, `api-key` contains the stored Prowlarr API key as plain text. Dependents mount `public` read-only, never `main`. This exposes neither `store.json` nor the admin password.
+
+When NZBGet is connected and installed, its `public` volume is mounted read-only at `/mnt/nzbget`. No download or library volume is needed: Prowlarr submits NZBs rather than importing completed files. Prowlarr's database retains the configured client credential; it is not copied to a package-owned file model.
 
 The image chowns `/config` to `PUID:PGID` on every start, so files written by the package as root are fixed up before Prowlarr runs.
 
@@ -79,6 +83,8 @@ Three files: Prowlarr's own `config.xml`, the package's private `store.json`, an
 | `connectedApps`                             | Connect Apps                | the apps selected for connection: `sonarr`, `radarr`, `lidarr`, `byparr` |
 | `sonarrAppId`, `radarrAppId`, `lidarrAppId` | the `reconcile` oneshot     | id of the Prowlarr application record the package manages                |
 | `byparrProxyId`                             | the `reconcile` oneshot     | id of the Prowlarr indexer proxy the package manages                     |
+| `nzbgetConnected` | Connect NZBGet | Desired downloader selection |
+| `nzbgetClientId` | `reconcile` | Reserved NZBGet download-client id |
 
 On every start, `reconcile`:
 
@@ -89,13 +95,13 @@ The records are written with `forceSave=true` and created disabled first, becaus
 
 3. For Byparr: when it is selected and installed, ensures a tag labelled `byparr` exists and creates (if needed) and updates an indexer proxy named `Byparr`, implementation FlareSolverr, with `host` set to Byparr's bridge address (`http://10.0.3.1:<assigned port>/`) and the `byparr` tag added to its tags. Other fields (request timeout, extra tags) are left as the user set them. A pre-existing FlareSolverr proxy named `Byparr` is adopted. When Byparr is deselected, it deletes the proxy whose id it stored; the tag stays, and indexers keep it. Prowlarr uses a FlareSolverr proxy only for indexers sharing one of its tags, so an untagged indexer never reaches Byparr. Created without tags first, then updated with `forceSave=true`, so a stopped Byparr is not an error.
 
-`adminPassword`, `apiKey`, `connectedApps` and the selected apps' bridge addresses are read reactively by `main`, so changing any of them restarts Prowlarr and re-runs `reconcile`. The API key file itself is not watched; the bridge address stands in for it. Uninstalling a selected app removes its address and reinstalling it brings one back, each restarting Prowlarr, so a reinstalled app's new key is picked up without a manual restart. A key Sonarr, Radarr or Lidarr changed in place (not by a reinstall) reaches Prowlarr on its next restart.
+`adminPassword`, `apiKey`, `connectedApps`, `nzbgetConnected`, the selected dependencies' bridge addresses and their exported credentials are watched reactively by `main`. Changes restart Prowlarr and rerun `reconcile`, including a Sonarr/Radarr/Lidarr API key changed in place. Uninstalling a dependency removes its address, and reinstalling it triggers reconciliation with its new address and key.
 
 **`public/api-key`** (`FileHelper.string`): reactive init copies `main/store.json`'s nonempty `apiKey` on install, update, restore and container rebuild, and republishes it whenever that stored key changes. It does not generate a second key. A manual edit is overwritten on the next init or stored-key change.
 
 ## Dependencies
 
-Sonarr, Radarr, Lidarr and Byparr, all optional, each declared only while selected in **Connect Apps**.
+Sonarr, Radarr, Lidarr and Byparr are optional selections in Connect Apps. NZBGet is an independent optional selection in Connect NZBGet.
 
 | Dependency | Kind      | Health checks | Mount                                           | Why                                                  |
 | ---------- | --------- | ------------- | ----------------------------------------------- | ---------------------------------------------------- |
@@ -103,6 +109,7 @@ Sonarr, Radarr, Lidarr and Byparr, all optional, each declared only while select
 | `radarr`   | `running` | `primary`     | its `public` volume, read-only at `/mnt/radarr` | read its API key (`api-key`); Prowlarr calls its API |
 | `lidarr`   | `running` | `primary`     | its `public` volume, read-only at `/mnt/lidarr` | read its API key (`api-key`); Prowlarr calls its API |
 | `byparr`   | `running` | `primary`     | none                                            | Prowlarr sends Cloudflare-challenged requests to it  |
+| `nzbget` | `running` | `primary` | its `public` volume read-only at `/mnt/nzbget` | Restricted download-control credentials |
 
 The host id and internal port of Sonarr, Radarr and Lidarr are imported from those packages (`ui-multi`; 8989, 7878 and 8686); Byparr's (`api`, 8191) are constants in `startos/utils.ts`. Each address is the dependency's bridge address. The Sonarr, Radarr and Lidarr mounts are added only while that bridge address resolves, i.e. while the app is installed, so a selected app that is not installed never blocks Prowlarr from starting.
 
@@ -124,10 +131,12 @@ Prowlarr's first-run "create credentials" modal is never shown: install generate
 
 ## Actions
 
-Two user-facing actions; both may run while Prowlarr is running or stopped.
+Three user-facing actions may run while Prowlarr is running or stopped.
 
 - **Set Admin Password** (`set-admin-password`, shown as **Reset Admin Password** once set) — run on first install and whenever the user has lost the password. Generates a 32-character password, stores it, and returns `admin` plus the password, once. If Prowlarr is running it restarts (a few seconds) and the new password applies on start; if stopped, it applies on the next start. Every run invalidates the previous password.
 - **Connect Apps** (`connect-apps`) — a multiselect of Sonarr, Radarr, Lidarr and Byparr, prefilled from `store.json`. Run it after installing an app, or to stop syncing to one. Selecting an app declares the dependency and creates its record on the next start; deselecting removes the dependency and deletes the record the package made. Deleting the record only stops the syncing: the indexers Prowlarr already synced into the app (named `<indexer> (Prowlarr)`) stay in its **Settings → Indexers** and keep searching through Prowlarr until removed there. Idempotent: resubmitting the same selection does not restart. A changed selection restarts Prowlarr if running.
+
+- **Connect NZBGet / Disconnect NZBGet** toggles `nzbgetConnected` and restarts Prowlarr. Reconciliation tracks the reserved `NZBGet (StartOS)` record by id or case-insensitive name, recovering interrupted creation without duplication. Repeating the action reverses selection; disconnect asks for confirmation and deletes only that reserved client, leaving manually named clients and app/indexer integrations intact. The initial category is `prowlarr`. Admin password rotation in NZBGet does not rotate its separate restricted integration credential.
 
 ## Tasks
 
@@ -179,12 +188,13 @@ startos_managed_env_vars:
   - PUID
   - PGID
   - TZ
-dependencies: [sonarr, radarr, lidarr, byparr] # all optional, enabled by connect-apps
+dependencies: [sonarr, radarr, lidarr, byparr, nzbget]
 interfaces:
   ui: { type: ui, port: 9696 }
 actions:
   - set-admin-password
   - connect-apps
+  - connect-nzbget
 tasks:
   - { action: set-admin-password, severity: critical }
 health_checks:

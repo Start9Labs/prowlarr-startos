@@ -23,6 +23,12 @@
 
 ## Using Prowlarr
 
+### NZBGet downloads
+
+Run **Connect NZBGet** to send manual Usenet grabs from Prowlarr's search results to NZBGet on this server. Configure your news server and shared download location in NZBGet first. The connection uses separate restricted credentials, so resetting NZBGet's admin password does not break it.
+
+The initial category is `prowlarr`; keep it in NZBGet, or change it consistently in both services. **Disconnect NZBGet** restarts Prowlarr and removes only `NZBGet (StartOS)`, not manually named download clients or connected apps. Download clients for Sonarr, Radarr, Lidarr and Shelfarr are configured in those services independently; Prowlarr does not sync its downloader settings to them.
+
 ### Shelfarr searches
 
 If you use Shelfarr on this server, run **Connect Prowlarr** in Shelfarr after adding your indexers here. The connection shares the API key automatically; there is no key to copy.
@@ -32,6 +38,7 @@ Shelfarr searches Prowlarr directly rather than receiving synced indexers. Do no
 ### Actions
 
 - **Set Admin Password** / **Reset Admin Password** — generates a new password for the `admin` account. Run it again whenever you need a new one; the old password stops working and Prowlarr restarts.
+- **Connect NZBGet** / **Disconnect NZBGet** — toggles the managed downloader for manual Usenet grabs and restarts Prowlarr.
 - **Connect Apps** — select the apps on this server that Prowlarr keeps in sync with its indexers, and Byparr. Selecting Byparr adds an indexer proxy named **Byparr** under **Settings → Indexers** and a **byparr** tag; deselecting it removes that proxy, and tagged indexers then go back to connecting directly. Prowlarr restarts when the selection changes, and a selected app must be running for its indexers to sync. Deselecting an app stops the syncing, but the indexers Prowlarr already added to that app stay there and keep searching through Prowlarr. To remove them, delete the indexers whose names end in **(Prowlarr)** in that app's **Settings → Indexers**.
 
 ## Limitations
