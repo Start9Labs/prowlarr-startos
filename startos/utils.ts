@@ -1,7 +1,6 @@
 import { T } from '@start9labs/start-sdk'
 import {
   ArrApi,
-  NzbgetConnection,
   downloadClientAddressFields,
   reconcileArrDownloadClient,
 } from 'nzbget-startos/startos/utils'
@@ -93,7 +92,11 @@ export async function reconcile(
   prowlarrAddress: string | null,
   connections: ArrConnection[],
   byparr: { selected: boolean; address: string | null },
-  nzbget: NzbgetConnection,
+  nzbget: {
+    connected: boolean
+    credentials: { username: string; password: string } | null
+    address: string | null
+  },
 ) {
   if (adminPassword && !(await canLogIn(adminPassword))) {
     const host = await api<object>(apiKey, '/config/host')

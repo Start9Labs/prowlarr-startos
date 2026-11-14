@@ -147,7 +147,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
         await sub.subpath('/mnt/nzbget/credentials.json'),
         credentialsShape,
       )
-        .read()
+        .read(({ username, password }) => ({ username, password }))
         .const(effects)
     : null
   const appKeys = Object.fromEntries(
