@@ -126,6 +126,7 @@ export async function reconcile(
             password: nzbget.credentials.password,
           }
         : null,
+    // Must name a category seeded by NZBGet.
     defaults: { category: 'prowlarr' },
   })
   const appIds: Record<ArrId, number | null> = {

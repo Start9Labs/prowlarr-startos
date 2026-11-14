@@ -47,7 +47,7 @@ Subcontainers:
 
 After `primary` is ready, a `reconcile` oneshot runs in the package's JavaScript runtime (no subcontainer) and drives Prowlarr's API on `127.0.0.1:9696` — see [File Models](#file-models).
 
-The same oneshot independently reconciles `NZBGet (StartOS)` through the shared Arr download-client primitive. Its restricted credentials come from NZBGet's public export. Creation seeds category `prowlarr`; later categories and non-connection settings remain user-owned. Missing dependency values preserve its existing record until available again.
+The same oneshot independently reconciles `NZBGet (StartOS)` through `reconcileArrDownloadClient`, imported from `nzbget-startos`. Its restricted credentials come from NZBGet's public export. Creation seeds category `prowlarr`; later categories and non-connection settings remain user-owned. Missing dependency values preserve its existing record until available again.
 
 ## Volume and Data Layout
 
@@ -136,7 +136,7 @@ Three user-facing actions may run while Prowlarr is running or stopped.
 - **Set Admin Password** (`set-admin-password`, shown as **Reset Admin Password** once set) — run on first install and whenever the user has lost the password. Generates a 32-character password, stores it, and returns `admin` plus the password, once. If Prowlarr is running it restarts (a few seconds) and the new password applies on start; if stopped, it applies on the next start. Every run invalidates the previous password.
 - **Connect Apps** (`connect-apps`) — a multiselect of Sonarr, Radarr, Lidarr and Byparr, prefilled from `store.json`. Run it after installing an app, or to stop syncing to one. Selecting an app declares the dependency and creates its record on the next start; deselecting removes the dependency and deletes the record the package made. Deleting the record only stops the syncing: the indexers Prowlarr already synced into the app (named `<indexer> (Prowlarr)`) stay in its **Settings → Indexers** and keep searching through Prowlarr until removed there. Idempotent: resubmitting the same selection does not restart. A changed selection restarts Prowlarr if running.
 
-- **Connect NZBGet / Disconnect NZBGet** toggles `nzbgetConnected` and restarts Prowlarr. Reconciliation tracks the reserved `NZBGet (StartOS)` record by id or case-insensitive name, recovering interrupted creation without duplication. Repeating the action reverses selection; disconnect asks for confirmation and deletes only that reserved client, leaving manually named clients and app/indexer integrations intact. The initial category is `prowlarr`. Admin password rotation in NZBGet does not rotate its separate restricted integration credential.
+- **Connect NZBGet / Disconnect NZBGet** — run to configure manual Usenet downloads. It toggles `nzbgetConnected` and costs a restart. Reconciliation tracks the reserved `NZBGet (StartOS)` record by id or case-insensitive name, recovering interrupted creation without duplication. The package reapplies its name, enabled state, host, port, SSL flag, username and password using NZBGet's restricted integration login, not its admin password. Creation seeds category `prowlarr`, which NZBGet defines; later category and other non-connection settings remain user-owned. Repeating the action reverses selection; disconnect deletes only the reserved client, leaving manually added clients with other names and app/indexer integrations intact. Admin password rotation in NZBGet does not rotate its separate restricted integration credential.
 
 ## Tasks
 
@@ -158,7 +158,7 @@ The `main` volume is copied wholesale (`ofVolumes`), with Prowlarr stopped.
 
 Excluded, because Prowlarr regenerates them on start: `config/logs/`, `config/logs.db*` (the log database), `config/Sentry/`. Everything else — `prowlarr.db`, `config.xml`, `Definitions/` (including any custom definitions), `asp/` cookie keys, Prowlarr's own `Backups/` and `store.json` — is included.
 
-A restored instance needs nothing re-entered: the admin password, API key and app selection come back with `store.json`. The `public` volume is not backed up: init regenerates its derived `api-key` from the restored store. On the first start `reconcile` rewrites the Sonarr/Radarr/Lidarr records with the keys and bridge addresses on the restored server.
+A restored instance needs nothing re-entered: the admin password, API key and app selection come back with `store.json`. The `public` volume is not backed up: init regenerates its derived `api-key` from the restored store. On the first start `reconcile` rewrites the Sonarr/Radarr/Lidarr records with the keys and bridge addresses on the restored server and reconciles the managed NZBGet client with its downloader's live address and restricted credentials.
 
 ## Limitations and Differences
 
