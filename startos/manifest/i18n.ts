@@ -1,11 +1,3 @@
-export const nzbgetDescription = {
-  en_US: 'Optional. Managed Usenet downloads through Connect NZBGet.',
-  es_ES: 'Opcional. Descargas de Usenet gestionadas mediante Conectar NZBGet.',
-  de_DE: 'Optional. Verwaltete Usenet-Downloads über NZBGet verbinden.',
-  pl_PL: 'Opcjonalne. Zarządzane pobrania z Usenetu przez Połącz NZBGet.',
-  fr_FR: 'Facultatif. Téléchargements Usenet gérés via Connecter NZBGet.',
-}
-
 export const short = {
   en_US: 'Indexer manager for Sonarr, Radarr and other media apps',
   es_ES:
@@ -80,4 +72,17 @@ export const byparrDescription = {
     'Opcjonalne. Pozwala Prowlarr korzystać z indeksatorów chronionych wyzwaniami Cloudflare. Wybierane w Połącz aplikacje.',
   fr_FR:
     'Optionnel. Permet à Prowlarr d’accéder aux indexeurs protégés par des défis Cloudflare. À sélectionner dans Connecter les applications.',
+}
+
+export const nzbgetDescription = {
+  en_US:
+    'Optional. Lets Prowlarr send manual Usenet grabs to NZBGet. Enabled with Connect NZBGet.',
+  es_ES:
+    'Opcional. Permite que Prowlarr envíe descargas manuales de Usenet a NZBGet. Se activa con Conectar NZBGet.',
+  de_DE:
+    'Optional. Ermöglicht Prowlarr, manuelle Usenet-Downloads an NZBGet zu senden. Aktivierung über NZBGet verbinden.',
+  pl_PL:
+    'Opcjonalne. Pozwala Prowlarr wysyłać ręczne pobrania z Usenetu do NZBGet. Włączane w Połącz NZBGet.',
+  fr_FR:
+    'Optionnel. Permet à Prowlarr d’envoyer les téléchargements Usenet manuels à NZBGet. À activer avec Connecter NZBGet.',
 }
