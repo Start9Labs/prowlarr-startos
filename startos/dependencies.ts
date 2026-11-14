@@ -24,7 +24,7 @@ export const dependencies = sdk.Dependencies.of()
       description: nzbgetDescription,
       metadata: {
         title: 'NZBGet',
-        icon: 'https://raw.githubusercontent.com/Start9Labs/nzbget-startos/feat/initial-package/icon.svg',
+        icon: 'https://raw.githubusercontent.com/Start9Labs/nzbget-startos/3f124f736163d0fa2e4667d7ef31b37983abb2ca/icon.svg',
       },
       versionRange: '>=26.3:0',
       kind: 'running',
