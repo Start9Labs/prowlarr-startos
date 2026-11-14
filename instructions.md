@@ -12,6 +12,7 @@
 
 - The Prowlarr **Web UI**, protected by a login StartOS creates for you.
 - A **Connect Apps** action that links Prowlarr to Sonarr, Radarr and Lidarr installed on this server, so compatible indexers you add in Prowlarr are synced to them automatically, and to Byparr, so Prowlarr can reach indexers behind Cloudflare challenges.
+- A **Connect NZBGet** action that sends the Usenet releases you grab in Prowlarr's search to NZBGet on this server.
 
 ## Getting set up
 
@@ -38,11 +39,12 @@ Shelfarr searches Prowlarr directly rather than receiving synced indexers. Do no
 ### Actions
 
 - **Set Admin Password** / **Reset Admin Password** — generates a new password for the `admin` account. Run it again whenever you need a new one; the old password stops working and Prowlarr restarts.
-- **Connect NZBGet** / **Disconnect NZBGet** — toggles the managed downloader for manual Usenet grabs and restarts Prowlarr.
 - **Connect Apps** — select the apps on this server that Prowlarr keeps in sync with its indexers, and Byparr. Selecting Byparr adds an indexer proxy named **Byparr** under **Settings → Indexers** and a **byparr** tag; deselecting it removes that proxy, and tagged indexers then go back to connecting directly. Prowlarr restarts when the selection changes, and a selected app must be running for its indexers to sync. Deselecting an app stops the syncing, but the indexers Prowlarr already added to that app stay there and keep searching through Prowlarr. To remove them, delete the indexers whose names end in **(Prowlarr)** in that app's **Settings → Indexers**.
+- **Connect NZBGet** / **Disconnect NZBGet** — adds NZBGet on this server as the download client for Usenet releases you grab in Prowlarr, or removes it. Prowlarr restarts.
 
 ## Limitations
 
 - The login, port, and API key are managed by StartOS. Changing authentication, the port, the URL base, or regenerating the API key in Prowlarr's **Settings → General** is undone the next time Prowlarr starts.
 - The applications named **Sonarr**, **Radarr** and **Lidarr** that Connect Apps creates are managed by StartOS. Edits to their address, API key, or sync level in **Settings → Apps** are undone the next time Prowlarr starts while that app is connected.
 - The **Byparr** indexer proxy is managed by StartOS too. Its address and its **byparr** tag are restored the next time Prowlarr starts while Byparr is connected; other settings, such as the request timeout, are yours.
+- The **NZBGet (StartOS)** download client is managed by StartOS as well. Its address and login are restored, and it is enabled again, the next time Prowlarr starts while NZBGet is connected; other settings, such as the category, are yours. To stop using it, run **Disconnect NZBGet**.
