@@ -25,6 +25,10 @@ export default {
     20: 'Conectar NZBGet',
     21: 'Envía descargas manuales de Usenet desde Prowlarr a NZBGet. Cambiar la conexión reinicia Prowlarr.',
     22: 'Elimina únicamente el cliente de descargas NZBGet (StartOS).',
+    23: 'Desconectar qBittorrent',
+    24: 'Conectar qBittorrent',
+    25: 'Envía descargas manuales de torrents desde Prowlarr a qBittorrent. Cambiar la conexión reinicia Prowlarr.',
+    26: 'Elimina únicamente el cliente de descargas qBittorrent (StartOS).',
   },
   de_DE: {
     0: 'Starte Prowlarr!',
@@ -50,6 +54,10 @@ export default {
     20: 'NZBGet verbinden',
     21: 'Sendet manuelle Usenet-Downloads von Prowlarr an NZBGet. Eine Verbindungsänderung startet Prowlarr neu.',
     22: 'Entfernt nur den Download-Client NZBGet (StartOS).',
+    23: 'qBittorrent trennen',
+    24: 'qBittorrent verbinden',
+    25: 'Sendet manuelle Torrent-Downloads von Prowlarr an qBittorrent. Eine Verbindungsänderung startet Prowlarr neu.',
+    26: 'Entfernt nur den Download-Client qBittorrent (StartOS).',
   },
   pl_PL: {
     0: 'Uruchamianie Prowlarr!',
@@ -75,6 +83,10 @@ export default {
     20: 'Połącz NZBGet',
     21: 'Wysyła ręczne pobrania Usenet z Prowlarr do NZBGet. Zmiana połączenia uruchamia Prowlarr ponownie.',
     22: 'Usuwa tylko klienta pobierania NZBGet (StartOS).',
+    23: 'Odłącz qBittorrent',
+    24: 'Połącz qBittorrent',
+    25: 'Wysyła ręczne pobrania torrentów z Prowlarr do qBittorrent. Zmiana połączenia uruchamia Prowlarr ponownie.',
+    26: 'Usuwa tylko klienta pobierania qBittorrent (StartOS).',
   },
   fr_FR: {
     0: 'Démarrage de Prowlarr !',
@@ -100,5 +112,9 @@ export default {
     20: 'Connecter NZBGet',
     21: 'Envoie les téléchargements Usenet manuels de Prowlarr vers NZBGet. Modifier la connexion redémarre Prowlarr.',
     22: 'Supprime uniquement le client de téléchargement NZBGet (StartOS).',
+    23: 'Déconnecter qBittorrent',
+    24: 'Connecter qBittorrent',
+    25: 'Envoie les téléchargements torrent manuels de Prowlarr vers qBittorrent. Modifier la connexion redémarre Prowlarr.',
+    26: 'Supprime uniquement le client de téléchargement qBittorrent (StartOS).',
   },
 } satisfies Record<string, LangDict>

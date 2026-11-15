@@ -86,3 +86,16 @@ export const nzbgetDescription = {
   fr_FR:
     'Optionnel. Permet à Prowlarr d’envoyer les téléchargements Usenet manuels à NZBGet. À activer avec Connecter NZBGet.',
 }
+
+export const qbittorrentDescription = {
+  en_US:
+    'Optional. Lets Prowlarr send manual torrent grabs to qBittorrent. Enabled with Connect qBittorrent.',
+  es_ES:
+    'Opcional. Permite que Prowlarr envíe descargas manuales de torrents a qBittorrent. Se activa con Conectar qBittorrent.',
+  de_DE:
+    'Optional. Ermöglicht Prowlarr, manuelle Torrent-Downloads an qBittorrent zu senden. Aktivierung über qBittorrent verbinden.',
+  pl_PL:
+    'Opcjonalne. Pozwala Prowlarr wysyłać ręczne pobrania torrentów do qBittorrent. Włączane w Połącz qBittorrent.',
+  fr_FR:
+    'Optionnel. Permet à Prowlarr d’envoyer les téléchargements torrent manuels à qBittorrent. À activer avec Connecter qBittorrent.',
+}

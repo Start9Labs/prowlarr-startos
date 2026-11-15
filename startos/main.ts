@@ -5,6 +5,11 @@ import {
   uiHostId as nzbgetHostId,
   uiPort as nzbgetPort,
 } from 'nzbget-startos/startos/utils'
+import { manifest as qbittorrentManifest } from 'qbittorrent-startos/startos/manifest'
+import {
+  uiHostId as qbittorrentHostId,
+  uiPort as qbittorrentPort,
+} from 'qbittorrent-startos/startos/utils'
 import { manifest as lidarrManifest } from 'lidarr-startos/startos/manifest'
 import { manifest as radarrManifest } from 'radarr-startos/startos/manifest'
 import { manifest as sonarrManifest } from 'sonarr-startos/startos/manifest'
@@ -30,6 +35,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       adminPassword: s.adminPassword,
       connectedApps: s.connectedApps,
       nzbgetConnected: s.nzbgetConnected,
+      qbittorrentConnected: s.qbittorrentConnected,
     }))
     .const(effects)
   if (!store?.apiKey) throw new Error('store.json has no API key')
@@ -95,6 +101,17 @@ export const main = sdk.setupMain(async ({ effects }) => {
         .const()
     : null
 
+  const qbittorrentAddress = store.qbittorrentConnected
+    ? await sdk.host
+        .getBridgeAddress(effects, {
+          packageId: 'qbittorrent',
+          hostId: qbittorrentHostId,
+          internalPort: qbittorrentPort,
+          ssl: false,
+        })
+        .const()
+    : null
+
   let mounts = sdk.Mounts.of().mountVolume({
     volumeId: 'main',
     subpath: 'config',
@@ -135,6 +152,15 @@ export const main = sdk.setupMain(async ({ effects }) => {
       readonly: true,
     })
 
+  if (qbittorrentAddress)
+    mounts = mounts.mountDependency<typeof qbittorrentManifest>({
+      dependencyId: 'qbittorrent',
+      volumeId: 'public',
+      subpath: null,
+      mountpoint: '/mnt/qbittorrent',
+      readonly: true,
+    })
+
   const sub = sdk.SubContainer.of(
     effects,
     { imageId: 'prowlarr' },
@@ -149,6 +175,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
       )
         .read(({ username, password }) => ({ username, password }))
         .const(effects)
+    : null
+  const qbittorrentApiKey = qbittorrentAddress
+    ? (
+        await FileHelper.string(await sub.subpath('/mnt/qbittorrent/api-key'))
+          .read()
+          .const(effects)
+      )?.trim() || null
     : null
   const appKeys = Object.fromEntries(
     await Promise.all(
@@ -208,6 +241,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
               connected: store.nzbgetConnected,
               address: nzbgetAddress,
               credentials: nzbgetCredentials,
+            },
+            {
+              connected: store.qbittorrentConnected,
+              address: qbittorrentAddress,
+              apiKey: qbittorrentApiKey,
             },
           )
           return null

@@ -15,6 +15,8 @@ const shape = z.looseObject({
   byparrProxyId: nullableId,
   nzbgetConnected: z.boolean().catch(false),
   nzbgetClientId: nullableId,
+  qbittorrentConnected: z.boolean().catch(false),
+  qbittorrentClientId: nullableId,
 })
 
 export type StoreType = z.infer<typeof shape>

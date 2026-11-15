@@ -33,6 +33,10 @@ const dict = {
   'Connect NZBGet': 20,
   'Send manual Usenet grabs from Prowlarr to NZBGet. Changing the connection restarts Prowlarr.': 21,
   'Removes only the NZBGet (StartOS) download client.': 22,
+  'Disconnect qBittorrent': 23,
+  'Connect qBittorrent': 24,
+  'Send manual torrent grabs from Prowlarr to qBittorrent. Changing the connection restarts Prowlarr.': 25,
+  'Removes only the qBittorrent (StartOS) download client.': 26,
 } as const
 
 /**

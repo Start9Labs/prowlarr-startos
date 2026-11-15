@@ -97,6 +97,11 @@ export async function reconcile(
     credentials: { username: string; password: string } | null
     address: string | null
   },
+  qbittorrent: {
+    connected: boolean
+    apiKey: string | null
+    address: string | null
+  },
 ) {
   if (adminPassword && !(await canLogIn(adminPassword))) {
     const host = await api<object>(apiKey, '/config/host')
@@ -128,6 +133,21 @@ export async function reconcile(
         : null,
     // Must name a category seeded by NZBGet.
     defaults: { category: 'prowlarr' },
+  })
+  const qbittorrentClientId = await reconcileArrDownloadClient(request, {
+    storedId: store?.qbittorrentClientId ?? null,
+    name: 'qBittorrent (StartOS)',
+    implementation: 'QBittorrent',
+    connected: qbittorrent.connected,
+    values:
+      qbittorrent.address && qbittorrent.apiKey
+        ? {
+            ...downloadClientAddressFields(qbittorrent.address),
+            apiKey: qbittorrent.apiKey,
+            username: '',
+            password: '',
+          }
+        : null,
   })
   const appIds: Record<ArrId, number | null> = {
     sonarr: store?.sonarrAppId ?? null,
@@ -228,7 +248,8 @@ export async function reconcile(
     appIds.radarr !== (store?.radarrAppId ?? null) ||
     appIds.lidarr !== (store?.lidarrAppId ?? null) ||
     byparrProxyId !== (store?.byparrProxyId ?? null) ||
-    nzbgetClientId !== (store?.nzbgetClientId ?? null)
+    nzbgetClientId !== (store?.nzbgetClientId ?? null) ||
+    qbittorrentClientId !== (store?.qbittorrentClientId ?? null)
   )
     await storeJson.merge(effects, {
       sonarrAppId: appIds.sonarr,
@@ -236,5 +257,6 @@ export async function reconcile(
       lidarrAppId: appIds.lidarr,
       byparrProxyId,
       nzbgetClientId,
+      qbittorrentClientId,
     })
 }
