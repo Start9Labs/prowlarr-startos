@@ -21,6 +21,10 @@ export default {
     16: 'Aplicaciones de este servidor que Prowlarr mantiene sincronizadas con sus indexadores, y Byparr, que permite a Prowlarr superar los desafíos de Cloudflare. Al deseleccionar una aplicación, se elimina de Prowlarr.',
     17: 'Conectar aplicaciones',
     18: 'Elige con qué aplicaciones de este servidor sincroniza Prowlarr sus indexadores, y si resuelve los desafíos de Cloudflare mediante Byparr. Cambiar la selección reinicia Prowlarr.',
+    19: 'Desconectar NZBGet',
+    20: 'Conectar NZBGet',
+    21: 'Envía descargas manuales de Usenet desde Prowlarr a NZBGet. Cambiar la conexión reinicia Prowlarr.',
+    22: 'Elimina únicamente el cliente de descargas NZBGet (StartOS).',
   },
   de_DE: {
     0: 'Starte Prowlarr!',
@@ -42,6 +46,10 @@ export default {
     16: 'Apps auf diesem Server, die Prowlarr mit seinen Indexern synchron hält, sowie Byparr, das Prowlarr an Cloudflare-Prüfungen vorbeibringt. Wird eine App abgewählt, wird sie aus Prowlarr entfernt.',
     17: 'Apps verbinden',
     18: 'Wähle, mit welchen Apps auf diesem Server Prowlarr seine Indexer synchronisiert und ob es Cloudflare-Prüfungen über Byparr löst. Eine Änderung der Auswahl startet Prowlarr neu.',
+    19: 'NZBGet trennen',
+    20: 'NZBGet verbinden',
+    21: 'Sendet manuelle Usenet-Downloads von Prowlarr an NZBGet. Eine Verbindungsänderung startet Prowlarr neu.',
+    22: 'Entfernt nur den Download-Client NZBGet (StartOS).',
   },
   pl_PL: {
     0: 'Uruchamianie Prowlarr!',
@@ -63,6 +71,10 @@ export default {
     16: 'Aplikacje na tym serwerze, z którymi Prowlarr synchronizuje swoje indeksatory, oraz Byparr, który pozwala Prowlarr przechodzić wyzwania Cloudflare. Odznaczenie aplikacji usuwa ją z Prowlarr.',
     17: 'Połącz aplikacje',
     18: 'Wybierz, z którymi aplikacjami na tym serwerze Prowlarr synchronizuje indeksatory i czy rozwiązuje wyzwania Cloudflare przez Byparr. Zmiana wyboru uruchamia Prowlarr ponownie.',
+    19: 'Odłącz NZBGet',
+    20: 'Połącz NZBGet',
+    21: 'Wysyła ręczne pobrania Usenet z Prowlarr do NZBGet. Zmiana połączenia uruchamia Prowlarr ponownie.',
+    22: 'Usuwa tylko klienta pobierania NZBGet (StartOS).',
   },
   fr_FR: {
     0: 'Démarrage de Prowlarr !',
@@ -84,5 +96,9 @@ export default {
     16: 'Applications de ce serveur que Prowlarr garde synchronisées avec ses indexeurs, et Byparr, qui permet à Prowlarr de franchir les défis Cloudflare. Désélectionner une application la retire de Prowlarr.',
     17: 'Connecter les applications',
     18: "Choisissez les applications de ce serveur avec lesquelles Prowlarr synchronise ses indexeurs, et s'il résout les défis Cloudflare via Byparr. Modifier la sélection redémarre Prowlarr.",
+    19: 'Déconnecter NZBGet',
+    20: 'Connecter NZBGet',
+    21: 'Envoie les téléchargements Usenet manuels de Prowlarr vers NZBGet. Modifier la connexion redémarre Prowlarr.',
+    22: 'Supprime uniquement le client de téléchargement NZBGet (StartOS).',
   },
 } satisfies Record<string, LangDict>

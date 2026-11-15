@@ -1,4 +1,10 @@
-import { readFile } from 'node:fs/promises'
+import { FileHelper } from '@start9labs/start-sdk'
+import { manifest as nzbgetManifest } from 'nzbget-startos/startos/manifest'
+import { credentialsShape } from 'nzbget-startos/startos/fileModels/credentials'
+import {
+  uiHostId as nzbgetHostId,
+  uiPort as nzbgetPort,
+} from 'nzbget-startos/startos/utils'
 import { manifest as lidarrManifest } from 'lidarr-startos/startos/manifest'
 import { manifest as radarrManifest } from 'radarr-startos/startos/manifest'
 import { manifest as sonarrManifest } from 'sonarr-startos/startos/manifest'
@@ -23,6 +29,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       apiKey: s.apiKey,
       adminPassword: s.adminPassword,
       connectedApps: s.connectedApps,
+      nzbgetConnected: s.nzbgetConnected,
     }))
     .const(effects)
   if (!store?.apiKey) throw new Error('store.json has no API key')
@@ -77,6 +84,17 @@ export const main = sdk.setupMain(async ({ effects }) => {
         .const()
     : null
 
+  const nzbgetAddress = store.nzbgetConnected
+    ? await sdk.host
+        .getBridgeAddress(effects, {
+          packageId: 'nzbget',
+          hostId: nzbgetHostId,
+          internalPort: nzbgetPort,
+          ssl: false,
+        })
+        .const()
+    : null
+
   let mounts = sdk.Mounts.of().mountVolume({
     volumeId: 'main',
     subpath: 'config',
@@ -108,11 +126,43 @@ export const main = sdk.setupMain(async ({ effects }) => {
       readonly: true,
     })
 
+  if (nzbgetAddress)
+    mounts = mounts.mountDependency<typeof nzbgetManifest>({
+      dependencyId: 'nzbget',
+      volumeId: 'public',
+      subpath: null,
+      mountpoint: '/mnt/nzbget',
+      readonly: true,
+    })
+
   const sub = sdk.SubContainer.of(
     effects,
     { imageId: 'prowlarr' },
     mounts,
     'prowlarr-sub',
+  )
+
+  const nzbgetCredentials = nzbgetAddress
+    ? await FileHelper.json(
+        await sub.subpath('/mnt/nzbget/credentials.json'),
+        credentialsShape,
+      )
+        .read(({ username, password }) => ({ username, password }))
+        .const(effects)
+    : null
+  const appKeys = Object.fromEntries(
+    await Promise.all(
+      arrApps.map(async ({ id }) => [
+        id,
+        addresses[id]
+          ? (
+              await FileHelper.string(await sub.subpath(`/mnt/${id}/api-key`))
+                .read()
+                .const(effects)
+            )?.trim() || null
+          : null,
+      ]),
+    ),
   )
 
   return sdk.Daemons.of(effects)
@@ -146,23 +196,19 @@ export const main = sdk.setupMain(async ({ effects }) => {
             store.apiKey,
             store.adminPassword,
             prowlarrAddress,
-            await Promise.all(
-              arrApps.map(async ({ id, name }) => ({
-                id,
-                name,
-                selected: store.connectedApps.includes(id),
-                address: addresses[id],
-                apiKey: addresses[id]
-                  ? (
-                      await readFile(
-                        await sub.subpath(`/mnt/${id}/api-key`),
-                        'utf8',
-                      )
-                    ).trim()
-                  : null,
-              })),
-            ),
+            arrApps.map(({ id, name }) => ({
+              id,
+              name,
+              selected: store.connectedApps.includes(id),
+              address: addresses[id],
+              apiKey: appKeys[id],
+            })),
             { selected: byparrSelected, address: byparrAddress },
+            {
+              connected: store.nzbgetConnected,
+              address: nzbgetAddress,
+              credentials: nzbgetCredentials,
+            },
           )
           return null
         },
