@@ -13,7 +13,7 @@ export const manifest = setupManifest({
   volumes: ['main', 'public'],
   images: {
     prowlarr: {
-      source: { dockerTag: 'lscr.io/linuxserver/prowlarr:2.7.0.5723-ls168' },
+      source: { dockerTag: 'lscr.io/linuxserver/prowlarr:3.0.2.5780-ls169' },
       arch: ['x86_64', 'aarch64'],
     },
   },
