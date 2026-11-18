@@ -132,7 +132,7 @@ Sonarr, Radarr and Lidarr each declare an optional `running` dependency on Prowl
 - is named `<App> (StartOS)` (`Sonarr (StartOS)`, …), implementation Sonarr/Radarr/Lidarr, sync level **Full Sync**, with `baseUrl` and `prowlarrUrl` set to the two packages' bridge addresses (`http://10.0.3.1:<assigned port>`) and the app's API key. Other fields (sync categories, tags) are left as the user set them.
 - is found by the id the app stored, by that name, or by the plain app name an earlier Prowlarr release used, and renamed on adoption.
 - is written with `forceSave=true` and created disabled first, because Prowlarr runs a connection test on creating an enabled application and rejects it when the app is stopped.
-- is deleted by the app when it disconnects, or is uninstalled while Prowlarr is reachable, and by Prowlarr's `reconcile` whenever the app is not installed.
+- is deleted by the app when it disconnects, and by Prowlarr's `reconcile` whenever the app is not installed.
 
 An app updated from a release that predates this has no connection decision yet. Once Prowlarr is reachable, it connects itself if Prowlarr already has a record for it and stays disconnected otherwise.
 
