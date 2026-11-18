@@ -11,7 +11,8 @@
 ## What you get on StartOS
 
 - The Prowlarr **Web UI**, protected by a login StartOS creates for you.
-- A **Connect Apps** action that links Prowlarr to Sonarr, Radarr and Lidarr installed on this server, so compatible indexers you add in Prowlarr are synced to them automatically, and to Byparr, so Prowlarr can reach indexers behind Cloudflare challenges.
+- Indexer sync to Sonarr, Radarr and Lidarr on this server: run **Connect Prowlarr** in each of them, and the indexers you add in Prowlarr are synced to it automatically.
+- A **Connect Byparr** action, so Prowlarr can reach indexers behind Cloudflare challenges.
 - **Connect qBittorrent** and **Connect NZBGet** actions that send the torrents and Usenet releases you grab in Prowlarr's search to qBittorrent and NZBGet on this server.
 
 ## Getting set up
@@ -19,8 +20,8 @@
 1. Run **Set Admin Password**. Copy the username and password it shows you — this is the only time the password is displayed.
 2. Start Prowlarr and open the **Web UI**. Sign in with those credentials.
 3. Add your indexers under **Indexers → Add Indexer**.
-4. If you use Sonarr, Radarr or Lidarr on this server, run **Connect Apps** and select them. Prowlarr then syncs your indexers to them; there are no API keys to copy.
-5. If an indexer fails with a Cloudflare error, install Byparr, select it in **Connect Apps**, then edit that indexer in Prowlarr and add the **byparr** tag. Only indexers carrying that tag go through Byparr. Byparr's own instructions explain how to route the two apps so the challenge result is accepted.
+4. If you use Sonarr, Radarr or Lidarr on this server, run **Connect Prowlarr** in each of them. Prowlarr then syncs your indexers to them; there are no API keys to copy.
+5. If an indexer fails with a Cloudflare error, install Byparr, run **Connect Byparr**, then edit that indexer in Prowlarr and add the **byparr** tag. Only indexers carrying that tag go through Byparr. Byparr's own instructions explain how to route the two apps so the challenge result is accepted.
 
 ## Using Prowlarr
 
@@ -40,19 +41,19 @@ The initial category is `prowlarr`; keep it in NZBGet, or change it consistently
 
 If you use Shelfarr on this server, run **Connect Prowlarr** in Shelfarr after adding your indexers here. The connection shares the API key automatically; there is no key to copy.
 
-Shelfarr searches Prowlarr directly rather than receiving synced indexers. Do not look for Shelfarr in Prowlarr's **Connect Apps** action or add it under **Settings → Apps**: Prowlarr has no Shelfarr sync provider. The connection shares Prowlarr's API key, not your admin password.
+Shelfarr searches Prowlarr directly rather than receiving synced indexers. Do not add Shelfarr under **Settings → Apps**: Prowlarr has no Shelfarr sync provider. The connection shares Prowlarr's API key, not your admin password.
 
 ### Actions
 
 - **Set Admin Password** / **Reset Admin Password** — generates a new password for the `admin` account. Run it again whenever you need a new one; the old password stops working and Prowlarr restarts.
-- **Connect Apps** — select the apps on this server that Prowlarr keeps in sync with its indexers, and Byparr. Selecting Byparr adds an indexer proxy named **Byparr** under **Settings → Indexers** and a **byparr** tag; deselecting it removes that proxy, and tagged indexers then go back to connecting directly. Prowlarr restarts when the selection changes, and a selected app must be running for its indexers to sync. Deselecting an app stops the syncing, but the indexers Prowlarr already added to that app stay there and keep searching through Prowlarr. To remove them, delete the indexers whose names end in **(Prowlarr)** in that app's **Settings → Indexers**.
+- **Connect Byparr** / **Disconnect Byparr** — adds an indexer proxy named **Byparr** under **Settings → Indexers** and a **byparr** tag, or removes that proxy, after which tagged indexers go back to connecting directly. Prowlarr restarts.
 - **Connect qBittorrent** / **Disconnect qBittorrent** — adds qBittorrent on this server as the download client for torrents you grab in Prowlarr, or removes it. Prowlarr restarts.
 - **Connect NZBGet** / **Disconnect NZBGet** — adds NZBGet on this server as the download client for Usenet releases you grab in Prowlarr, or removes it. Prowlarr restarts.
 
 ## Limitations
 
 - The login, port, and API key are managed by StartOS. Changing authentication, the port, the URL base, or regenerating the API key in Prowlarr's **Settings → General** is undone the next time Prowlarr starts.
-- The applications named **Sonarr**, **Radarr** and **Lidarr** that Connect Apps creates are managed by StartOS. Edits to their address, API key, or sync level in **Settings → Apps** are undone the next time Prowlarr starts while that app is connected.
+- The applications named **Sonarr (StartOS)**, **Radarr (StartOS)** and **Lidarr (StartOS)** are managed by those services. Edits to their name, address, API key, or sync level in **Settings → Apps** are undone the next time that app starts while connected to Prowlarr. Uninstalling one of those apps removes its application here. Disconnecting an app stops the syncing, but the indexers Prowlarr already added to it stay there; delete the ones whose names end in **(Prowlarr)** in that app's **Settings → Indexers**.
 - The **Byparr** indexer proxy is managed by StartOS too. Its address and its **byparr** tag are restored the next time Prowlarr starts while Byparr is connected; other settings, such as the request timeout, are yours.
 - The **qBittorrent (StartOS)** download client is managed the same way while qBittorrent is connected: its address and API key are restored and it is enabled again on every start; other settings, such as the category, are yours.
 - The **NZBGet (StartOS)** download client is managed by StartOS as well. Its address and login are restored, and it is enabled again, the next time Prowlarr starts while NZBGet is connected; other settings, such as the category, are yours. To stop using it, run **Disconnect NZBGet**.

@@ -6,9 +6,8 @@ const nullableId = z.number().nullable().catch(null)
 const shape = z.looseObject({
   apiKey: z.string().catch(''),
   adminPassword: z.string().nullable().catch(null),
-  connectedApps: z
-    .array(z.enum(['sonarr', 'radarr', 'lidarr', 'byparr']))
-    .catch([]),
+  byparrConnected: z.boolean().catch(false),
+  // Application records an earlier release created for the synced apps.
   sonarrAppId: nullableId,
   radarrAppId: nullableId,
   lidarrAppId: nullableId,

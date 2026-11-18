@@ -10,19 +10,16 @@ import {
   uiHostId as qbittorrentHostId,
   uiPort as qbittorrentPort,
 } from 'qbittorrent-startos/startos/utils'
-import { manifest as lidarrManifest } from 'lidarr-startos/startos/manifest'
-import { manifest as radarrManifest } from 'radarr-startos/startos/manifest'
-import { manifest as sonarrManifest } from 'sonarr-startos/startos/manifest'
 import { configXml } from './fileModels/config.xml'
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
 import {
-  arrApps,
   byparrHostId,
   byparrPort,
   reconcile,
-  uiHostId,
+  SyncedAppId,
+  syncedApps,
   uiPort,
 } from './utils'
 
@@ -33,7 +30,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     .read((s) => ({
       apiKey: s.apiKey,
       adminPassword: s.adminPassword,
-      connectedApps: s.connectedApps,
+      byparrConnected: s.byparrConnected,
       nzbgetConnected: s.nzbgetConnected,
       qbittorrentConnected: s.qbittorrentConnected,
     }))
@@ -52,34 +49,16 @@ export const main = sdk.setupMain(async ({ effects }) => {
     },
   })
 
-  const prowlarrAddress = await sdk.host
-    .getBridgeAddress(effects, {
-      hostId: uiHostId,
-      internalPort: uiPort,
-      ssl: false,
-    })
-    .const()
-
-  const addresses = Object.fromEntries(
+  const installedApps = Object.fromEntries(
     await Promise.all(
-      arrApps.map(async ({ id, hostId, port }) => [
+      (Object.keys(syncedApps) as SyncedAppId[]).map(async (id) => [
         id,
-        store.connectedApps.includes(id)
-          ? await sdk.host
-              .getBridgeAddress(effects, {
-                packageId: id,
-                hostId,
-                internalPort: port,
-                ssl: false,
-              })
-              .const()
-          : null,
+        await sdk.getServiceManifest(effects, id, (m) => m !== null).const(),
       ]),
     ),
-  )
+  ) as Record<SyncedAppId, boolean>
 
-  const byparrSelected = store.connectedApps.includes('byparr')
-  const byparrAddress = byparrSelected
+  const byparrAddress = store.byparrConnected
     ? await sdk.host
         .getBridgeAddress(effects, {
           packageId: 'byparr',
@@ -118,31 +97,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
     mountpoint: '/config',
     readonly: false,
   })
-  if (addresses.sonarr)
-    mounts = mounts.mountDependency<typeof sonarrManifest>({
-      dependencyId: 'sonarr',
-      volumeId: 'public',
-      subpath: null,
-      mountpoint: '/mnt/sonarr',
-      readonly: true,
-    })
-  if (addresses.radarr)
-    mounts = mounts.mountDependency<typeof radarrManifest>({
-      dependencyId: 'radarr',
-      volumeId: 'public',
-      subpath: null,
-      mountpoint: '/mnt/radarr',
-      readonly: true,
-    })
-  if (addresses.lidarr)
-    mounts = mounts.mountDependency<typeof lidarrManifest>({
-      dependencyId: 'lidarr',
-      volumeId: 'public',
-      subpath: null,
-      mountpoint: '/mnt/lidarr',
-      readonly: true,
-    })
-
   if (nzbgetAddress)
     mounts = mounts.mountDependency<typeof nzbgetManifest>({
       dependencyId: 'nzbget',
@@ -183,21 +137,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
           .const(effects)
       )?.trim() || null
     : null
-  const appKeys = Object.fromEntries(
-    await Promise.all(
-      arrApps.map(async ({ id }) => [
-        id,
-        addresses[id]
-          ? (
-              await FileHelper.string(await sub.subpath(`/mnt/${id}/api-key`))
-                .read()
-                .const(effects)
-            )?.trim() || null
-          : null,
-      ]),
-    ),
-  )
-
   return sdk.Daemons.of(effects)
     .addDaemon('primary', {
       subcontainer: sub,
@@ -224,19 +163,14 @@ export const main = sdk.setupMain(async ({ effects }) => {
       subcontainer: null,
       exec: {
         fn: async () => {
-          await reconcile(
-            effects,
+          const stored = await storeJson.read().once()
+          if (!stored) throw new Error('store.json is missing')
+          const ids = await reconcile(
             store.apiKey,
             store.adminPassword,
-            prowlarrAddress,
-            arrApps.map(({ id, name }) => ({
-              id,
-              name,
-              selected: store.connectedApps.includes(id),
-              address: addresses[id],
-              apiKey: appKeys[id],
-            })),
-            { selected: byparrSelected, address: byparrAddress },
+            stored,
+            installedApps,
+            { connected: store.byparrConnected, address: byparrAddress },
             {
               connected: store.nzbgetConnected,
               address: nzbgetAddress,
@@ -248,6 +182,12 @@ export const main = sdk.setupMain(async ({ effects }) => {
               apiKey: qbittorrentApiKey,
             },
           )
+          if (
+            Object.entries(ids).some(
+              ([k, v]) => stored[k as keyof typeof ids] !== v,
+            )
+          )
+            await storeJson.merge(effects, ids)
           return null
         },
       },
