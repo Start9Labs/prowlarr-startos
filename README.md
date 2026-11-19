@@ -49,14 +49,14 @@ After `primary` is ready, a `reconcile` oneshot runs in the package's JavaScript
 
 ## Volume and Data Layout
 
-Prowlarr's data and private package state live on `main`. A separate `public` volume carries only the API key export for dependents; Prowlarr's subcontainer does not mount it.
+Prowlarr's data and private package state live on `main`. A separate `public` volume carries derived connection exports for dependents; Prowlarr's subcontainer does not mount it.
 
 | Path on `main` | Mounted at  | Contents                                                                                                                           |
 | -------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `config/`      | `/config`   | Prowlarr's app data: `config.xml`, `prowlarr.db` and `logs.db` (SQLite), `Definitions/`, `asp/` (cookie keys), `logs/`, `Backups/` |
 | `store.json`   | not mounted | StartOS-side state (see below)                                                                                                     |
 
-On `public`, `api-key` contains the stored Prowlarr API key as plain text. Dependents mount `public` read-only, never `main`. This exposes neither `store.json` nor the admin password.
+On `public`, `api-key` contains the stored Prowlarr API key as plain text. `legacy-applications.json` hands the previous connection selections and record ids to upgraded app packages. Dependents mount `public` read-only, never `main`. This exposes neither `store.json` nor the admin password.
 
 Prowlarr mounts no download or library storage, even with NZBGet or qBittorrent connected: it hands the downloader the release and never imports the finished files.
 
@@ -64,7 +64,7 @@ The image chowns `/config` to `PUID:PGID` on every start, so files written by th
 
 ## File Models
 
-Three files: Prowlarr's own `config.xml`, the package's private `store.json`, and the derived API key export.
+Four files: Prowlarr's own `config.xml`, the package's private `store.json`, and the derived API key and legacy application exports.
 
 **`config/config.xml`** (XML, `FileHelper.xml`, unknown keys preserved):
 
@@ -79,6 +79,7 @@ Three files: Prowlarr's own `config.xml`, the package's private `store.json`, an
 | `apiKey`                                    | install init (32 hex chars)                          | Prowlarr's API key; re-asserted into `config.xml` on start                             |
 | `adminPassword`                             | Set Admin Password                                   | password of the `admin` user, in plaintext                                             |
 | `byparrConnected`                           | Connect Byparr                                       | whether Byparr is connected                                                            |
+| `legacyConnectedApps`                       | the 3.0.2.5780:1 migration                           | previous synced-app selections; `null` when there is no selection to hand off          |
 | `sonarrAppId`, `radarrAppId`, `lidarrAppId` | releases before 3.0.2.5780:1; cleared by `reconcile` | id of the application record an earlier release created, kept until the record is gone |
 | `byparrProxyId`                             | the `reconcile` oneshot                              | id of the Prowlarr indexer proxy the package manages                                   |
 | `nzbgetConnected`                           | Connect NZBGet                                       | whether NZBGet is connected                                                            |
@@ -86,20 +87,22 @@ Three files: Prowlarr's own `config.xml`, the package's private `store.json`, an
 | `qbittorrentConnected`                      | Connect qBittorrent                                  | whether qBittorrent is connected                                                       |
 | `qbittorrentClientId`                       | the `reconcile` oneshot                              | id of the `qBittorrent (StartOS)` download client the package manages                  |
 
-The 3.0.2.5780:1 migration turns the retired `connectedApps` selection into `byparrConnected`.
+The 3.0.2.5780:1 migration turns the retired `connectedApps` selection into `byparrConnected` and `legacyConnectedApps`, preserving the app selections independently of whether their application records exist.
 
 On every start, `reconcile`:
 
 1. Tries `POST /login` as `admin` with `adminPassword`; if that fails, applies it through `PUT /api/v1/config/host`. A password changed in the UI is therefore reset to the stored one on the next start.
 2. For NZBGet, through `reconcileArrDownloadClient` (imported from `nzbget-startos`): when connected with an available address and credentials, creates (if needed) and updates a download client named `NZBGet (StartOS)`, implementation Nzbget, enabled, with `host` and `port` set to NZBGet's bridge address, SSL off, and the restricted `username` and `password` NZBGet publishes in `credentials.json`, never its admin password. A new client gets category `prowlarr`, which NZBGet defines out of the box; after that the category and every other setting outside the connection are left as the user set them. It finds the client by the id it stored, or by its name in any letter case, so a start interrupted after the create never leaves a second client behind, and a client the user named `NZBGet (StartOS)` is adopted. When NZBGet is disconnected, it deletes that one client; other download clients are never touched. While NZBGet is connected but its address or credentials are unavailable, the client is left as it is. Created disabled, then enabled with `forceSave=true`, so a stopped NZBGet is not an error.
 3. For qBittorrent, through the same `reconcileArrDownloadClient`: when connected with an available address and API key, creates (if needed) and updates a download client named `qBittorrent (StartOS)`, implementation QBittorrent, enabled, with `host` and `port` set to qBittorrent's bridge address, SSL off, and the Web API key qBittorrent publishes in `api-key`, with no username or password. A new client gets Prowlarr's default category, `prowlarr`; after that the category and every other setting outside the connection are left as the user set them. It is found, adopted, deleted and left alone exactly as the NZBGet client is, independently of it.
-4. For each of Sonarr, Radarr and Lidarr that is not installed: deletes the application records that app manages (see [Synced apps](#synced-apps)), and the record an earlier release created for it, so an uninstalled app leaves nothing behind. A stored legacy id whose record no longer exists is cleared. Records of installed apps, and records with any other name, are never touched.
+4. For each of Sonarr, Radarr and Lidarr that is not installed: deletes the application records that app manages (see [Synced apps](#synced-apps)), and the record an earlier release created for it, so an uninstalled app leaves nothing behind. A stored legacy id whose record no longer exists is cleared. Records of installed apps and unowned records are never touched.
 
 5. For Byparr: when it is connected and installed, ensures a tag labelled `byparr` exists and creates (if needed) and updates an indexer proxy named `Byparr`, implementation FlareSolverr, with `host` set to Byparr's bridge address (`http://10.0.3.1:<assigned port>/`) and the `byparr` tag added to its tags. Other fields (request timeout, extra tags) are left as the user set them. A pre-existing FlareSolverr proxy named `Byparr` is adopted. When Byparr is disconnected, it deletes the proxy whose id it stored; the tag stays, and indexers keep it. Prowlarr uses a FlareSolverr proxy only for indexers sharing one of its tags, so an untagged indexer never reaches Byparr. Created without tags first, then updated with `forceSave=true`, so a stopped Byparr is not an error.
 
 `adminPassword`, `apiKey`, `byparrConnected`, `nzbgetConnected`, `qbittorrentConnected`, the connected dependencies' bridge addresses and their exported credentials, and whether each of Sonarr, Radarr and Lidarr is installed are watched reactively by `main`. For NZBGet, only username and password are watched; changing its published download path does not restart Prowlarr. Changes restart Prowlarr and rerun `reconcile`, so uninstalling a synced app removes its record right away. Uninstalling a dependency removes its address, and reinstalling it triggers reconciliation with its new address and key.
 
 **`public/api-key`** (`FileHelper.string`): reactive init copies `main/store.json`'s nonempty `apiKey` on install, update, restore and container rebuild, and republishes it whenever that stored key changes. It does not generate a second key. A manual edit is overwritten on the next init or stored-key change.
+
+**`public/legacy-applications.json`** (`FileHelper.json`): reactive init publishes each synced app's migrated `connected` selection and retained `appId`. A fresh Prowlarr installation publishes `{}`. Consumers import `legacyApplicationsShape` from `startos/utils.ts`, read this file from their read-only `public` mount, and pass their entry as `legacy` to `reconcileProwlarrApplication`. An undecided consumer must wait for the file to exist before reconciling; a missing entry in an existing file means there is no legacy selection. The stored ids remain authoritative even when a user renamed a legacy record. A plain implementation name does not establish ownership of a manually configured remote app.
 
 ## Dependencies
 
@@ -130,11 +133,11 @@ Shelfarr queries Prowlarr directly through this API. Its **Connect Prowlarr** ac
 Sonarr, Radarr and Lidarr each declare an optional `running` dependency on Prowlarr, enabled from their own **Connect Prowlarr** action, mount Prowlarr's `public` volume read-only for its API key, and manage their own application record through `reconcileProwlarrApplication`, exported from `startos/utils.ts` with `prowlarrApi`, `syncedApps` and `managedApplicationName`. The record:
 
 - is named `<App> (StartOS)` (`Sonarr (StartOS)`, …), implementation Sonarr/Radarr/Lidarr, sync level **Full Sync**, with `baseUrl` and `prowlarrUrl` set to the two packages' bridge addresses (`http://10.0.3.1:<assigned port>`) and the app's API key. Other fields (sync categories, tags) are left as the user set them.
-- is found by the id the app stored, by that name, or by the plain app name an earlier Prowlarr release used, and renamed on adoption.
+- is found by the id the app stored, by Prowlarr's migrated id while the connection is undecided, or by its reserved name, and renamed on adoption. Plain names such as `Sonarr` never establish ownership.
 - is written with `forceSave=true` and created disabled first, because Prowlarr runs a connection test on creating an enabled application and rejects it when the app is stopped.
 - is deleted by the app when it disconnects, and by Prowlarr's `reconcile` whenever the app is not installed.
 
-An app updated from a release that predates this has no connection decision yet. Once Prowlarr is reachable, it connects itself if Prowlarr already has a record for it and stays disconnected otherwise.
+An app updated from a release that predates this has no connection decision yet. It reads the migrated selection from `legacy-applications.json`: a selected app stays connected even if its record is missing, and an unselected app stays disconnected. Without a legacy selection it adopts an existing reserved record and otherwise stays disconnected. The app persists its decision; subsequent user choices supersede the migration snapshot.
 
 ## Installation and First-Run Flow
 
@@ -169,7 +172,7 @@ The `main` volume is copied wholesale (`ofVolumes`), with Prowlarr stopped.
 
 Excluded, because Prowlarr regenerates them on start: `config/logs/`, `config/logs.db*` (the log database), `config/Sentry/`. Everything else — `prowlarr.db`, `config.xml`, `Definitions/` (including any custom definitions), `asp/` cookie keys, Prowlarr's own `Backups/` and `store.json` — is included.
 
-A restored instance needs nothing re-entered: the admin password, API key and Byparr, NZBGet and qBittorrent connections come back with `store.json`. The `public` volume is not backed up: init regenerates its derived `api-key` from the restored store. On the first start `reconcile` reconciles the managed Byparr proxy and NZBGet and qBittorrent clients with their live addresses and credentials. Sonarr, Radarr and Lidarr rewrite their own records on their next start.
+A restored instance needs nothing re-entered: the admin password, API key and Byparr, NZBGet and qBittorrent connections come back with `store.json`. The `public` volume is not backed up: init regenerates its derived `api-key` and `legacy-applications.json` from the restored store. On the first start `reconcile` reconciles the managed Byparr proxy and NZBGet and qBittorrent clients with their live addresses and credentials. Sonarr, Radarr and Lidarr rewrite their own records on their next start.
 
 ## Limitations and Differences
 
@@ -195,6 +198,7 @@ file_models:
   - main/config/config.xml
   - main/store.json
   - public/api-key
+  - public/legacy-applications.json
 startos_managed_env_vars:
   - PUID
   - PGID

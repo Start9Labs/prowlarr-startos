@@ -19,7 +19,7 @@ import {
   byparrPort,
   reconcile,
   SyncedAppId,
-  syncedApps,
+  syncedAppIds,
   uiPort,
 } from './utils'
 
@@ -51,7 +51,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
 
   const installedApps = Object.fromEntries(
     await Promise.all(
-      (Object.keys(syncedApps) as SyncedAppId[]).map(async (id) => [
+      syncedAppIds.map(async (id) => [
         id,
         await sdk.getServiceManifest(effects, id, (m) => m !== null).const(),
       ]),

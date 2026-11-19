@@ -6,6 +6,7 @@ import { actions } from '../actions'
 import { restoreInit } from '../backups'
 import { seedFiles } from './seedFiles'
 import { shareApiKey } from './shareApiKey'
+import { shareLegacyApplications } from './shareLegacyApplications'
 import { watchAdminPassword } from './watchAdminPassword'
 
 export const init = sdk.setupInit(
@@ -16,6 +17,7 @@ export const init = sdk.setupInit(
   dependencies,
   seedFiles,
   shareApiKey,
+  shareLegacyApplications,
   watchAdminPassword,
 )
 

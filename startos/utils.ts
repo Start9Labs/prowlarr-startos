@@ -1,3 +1,4 @@
+import { z } from '@start9labs/start-sdk'
 import {
   ArrApi,
   downloadClientAddressFields,
@@ -18,6 +19,15 @@ export const syncedApps = {
 } as const
 
 export type SyncedAppId = keyof typeof syncedApps
+export const syncedAppIds = Object.keys(syncedApps) as SyncedAppId[]
+
+/** Persisted intent and ownership handed off to upgraded app packages. */
+export const legacyApplicationsShape = z
+  .partialRecord(
+    z.enum(syncedAppIds),
+    z.looseObject({ connected: z.boolean(), appId: z.number().nullable() }),
+  )
+  .catch({})
 
 /** A Prowlarr bridge address and its API key. */
 export type ProwlarrConnection = { address: string; apiKey: string }
@@ -69,9 +79,10 @@ function ownsApplication(
 
 /**
  * Reconciles the application record a synced app keeps in Prowlarr.
- * Matches the stored id, the reserved name, or a record named after the
- * implementation that an earlier Prowlarr release created.
- * An undecided connection adopts a matching record and otherwise stays disconnected.
+ * Matches the stored id, the migrated id, or the reserved name.
+ * An undecided connection follows migrated intent, then the reserved record.
+ * Callers must read legacy-applications.json before deciding an undecided connection.
+ * Plain implementation names do not establish StartOS ownership.
  * Missing values preserve the record; disconnection deletes it.
  * The caller persists the returned decision and id.
  */
@@ -81,6 +92,7 @@ export async function reconcileProwlarrApplication(
     id: SyncedAppId
     storedId: number | null
     connected: boolean | null
+    legacy: z.infer<typeof legacyApplicationsShape>[SyncedAppId] | null
     values: { baseUrl: string; apiKey: string } | null
   },
 ): Promise<{ connected: boolean; appId: number | null }> {
@@ -88,17 +100,18 @@ export async function reconcileProwlarrApplication(
   const implementation = syncedApps[app.id]
   const name = managedApplicationName(app.id)
   const applications = await api<Application[]>('/applications')
+  const legacy = app.connected === null ? app.legacy : null
   const current =
     applications.find(
       (a) => a.id === app.storedId && a.implementation === implementation,
     ) ??
     applications.find(
-      (a) => a.name === name && a.implementation === implementation,
+      (a) => a.id === legacy?.appId && a.implementation === implementation,
     ) ??
     applications.find(
-      (a) => a.name === implementation && a.implementation === implementation,
+      (a) => a.name === name && a.implementation === implementation,
     )
-  const connected = app.connected ?? current !== undefined
+  const connected = app.connected ?? legacy?.connected ?? current !== undefined
 
   if (!connected) {
     if (current) await api(`/applications/${current.id}`, 'DELETE')
@@ -150,6 +163,15 @@ type ManagedIds = {
   byparrProxyId: number | null
   nzbgetClientId: number | null
   qbittorrentClientId: number | null
+}
+
+/** Legacy application ids retained for adoption and uninstall cleanup. */
+export function legacyApplicationIds(stored: ManagedIds) {
+  return {
+    sonarr: stored.sonarrAppId,
+    radarr: stored.radarrAppId,
+    lidarr: stored.lidarrAppId,
+  }
 }
 
 /** Returns the managed record ids for the caller to persist. */
@@ -216,13 +238,9 @@ export async function reconcile(
         : null,
   })
 
-  const legacyIds: Record<SyncedAppId, number | null> = {
-    sonarr: stored.sonarrAppId,
-    radarr: stored.radarrAppId,
-    lidarr: stored.lidarrAppId,
-  }
+  const legacyIds = legacyApplicationIds(stored)
   const applications = await api<Application[]>('/applications')
-  for (const id of Object.keys(syncedApps) as SyncedAppId[]) {
+  for (const id of syncedAppIds) {
     if (!applications.some((a) => a.id === legacyIds[id])) legacyIds[id] = null
     if (installedApps[id]) continue
     for (const record of applications)

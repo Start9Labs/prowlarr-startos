@@ -1,5 +1,6 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 import { storeJson } from '../fileModels/store.json'
+import { syncedAppIds } from '../utils'
 
 export const current = VersionInfo.of({
   version: '3.0.2.5780:1',
@@ -28,10 +29,11 @@ export const current = VersionInfo.of({
         connectedApps?: unknown
       }
       if (connectedApps === undefined) return
+      const selected = Array.isArray(connectedApps) ? connectedApps : []
       await storeJson.write(effects, {
         ...rest,
-        byparrConnected:
-          Array.isArray(connectedApps) && connectedApps.includes('byparr'),
+        byparrConnected: selected.includes('byparr'),
+        legacyConnectedApps: syncedAppIds.filter((id) => selected.includes(id)),
       })
     },
     down: IMPOSSIBLE,
