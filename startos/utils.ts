@@ -81,7 +81,8 @@ function ownsApplication(
  * Reconciles the application record a synced app keeps in Prowlarr.
  * Matches the stored id, the migrated id, or the reserved name.
  * An undecided connection follows migrated intent, then the reserved record.
- * Callers must read legacy-applications.json before deciding an undecided connection.
+ * An explicit connection choice overrides migrated intent, not migrated ownership.
+ * Callers must read legacy-applications.json before reconciling a connection.
  * Plain implementation names do not establish StartOS ownership.
  * Missing values preserve the record; disconnection deletes it.
  * The caller persists the returned decision and id.
@@ -100,7 +101,7 @@ export async function reconcileProwlarrApplication(
   const implementation = syncedApps[app.id]
   const name = managedApplicationName(app.id)
   const applications = await api<Application[]>('/applications')
-  const legacy = app.connected === null ? app.legacy : null
+  const legacy = app.legacy
   const current =
     applications.find(
       (a) => a.id === app.storedId && a.implementation === implementation,

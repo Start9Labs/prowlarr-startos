@@ -133,7 +133,7 @@ Shelfarr queries Prowlarr directly through this API. Its **Connect Prowlarr** ac
 Sonarr, Radarr and Lidarr each declare an optional `running` dependency on Prowlarr, enabled from their own **Connect Prowlarr** action, mount Prowlarr's `public` volume read-only for its API key, and manage their own application record through `reconcileProwlarrApplication`, exported from `startos/utils.ts` with `prowlarrApi`, `syncedApps` and `managedApplicationName`. The record:
 
 - is named `<App> (StartOS)` (`Sonarr (StartOS)`, …), implementation Sonarr/Radarr/Lidarr, sync level **Full Sync**, with `baseUrl` and `prowlarrUrl` set to the two packages' bridge addresses (`http://10.0.3.1:<assigned port>`) and the app's API key. Other fields (sync categories, tags) are left as the user set them.
-- is found by the id the app stored, by Prowlarr's migrated id while the connection is undecided, or by its reserved name, and renamed on adoption. Plain names such as `Sonarr` never establish ownership.
+- is found by the id the app stored, by Prowlarr's migrated id, or by its reserved name, and renamed on adoption. Plain names such as `Sonarr` never establish ownership. An explicit Connect or Disconnect choice overrides the migrated selection without discarding its record id.
 - is written with `forceSave=true` and created disabled first, because Prowlarr runs a connection test on creating an enabled application and rejects it when the app is stopped.
 - is deleted by the app when it disconnects, and by Prowlarr's `reconcile` whenever the app is not installed.
 
