@@ -22,56 +22,17 @@ export const long = {
     "Prowlarr gère vos trackers torrent et indexeurs Usenet en un seul endroit et les synchronise avec Sonarr, Radarr et d'autres applications multimédias : chaque indexeur se configure une seule fois au lieu de l'être dans chaque application.",
 }
 
-export const sonarrDescription = {
-  en_US:
-    'Optional. Lets Prowlarr sync its indexers to Sonarr. Selected in Connect Apps.',
-  es_ES:
-    'Opcional. Permite que Prowlarr sincronice sus indexadores con Sonarr. Se selecciona en Conectar aplicaciones.',
-  de_DE:
-    'Optional. Ermöglicht Prowlarr, seine Indexer mit Sonarr zu synchronisieren. Auswahl unter Apps verbinden.',
-  pl_PL:
-    'Opcjonalne. Pozwala Prowlarr synchronizować indeksatory z Sonarr. Wybierane w Połącz aplikacje.',
-  fr_FR:
-    'Optionnel. Permet à Prowlarr de synchroniser ses indexeurs avec Sonarr. À sélectionner dans Connecter les applications.',
-}
-
-export const radarrDescription = {
-  en_US:
-    'Optional. Lets Prowlarr sync its indexers to Radarr. Selected in Connect Apps.',
-  es_ES:
-    'Opcional. Permite que Prowlarr sincronice sus indexadores con Radarr. Se selecciona en Conectar aplicaciones.',
-  de_DE:
-    'Optional. Ermöglicht Prowlarr, seine Indexer mit Radarr zu synchronisieren. Auswahl unter Apps verbinden.',
-  pl_PL:
-    'Opcjonalne. Pozwala Prowlarr synchronizować indeksatory z Radarr. Wybierane w Połącz aplikacje.',
-  fr_FR:
-    'Optionnel. Permet à Prowlarr de synchroniser ses indexeurs avec Radarr. À sélectionner dans Connecter les applications.',
-}
-
-export const lidarrDescription = {
-  en_US:
-    'Optional. Lets Prowlarr sync its indexers to Lidarr. Selected in Connect Apps.',
-  es_ES:
-    'Opcional. Permite que Prowlarr sincronice sus indexadores con Lidarr. Se selecciona en Conectar aplicaciones.',
-  de_DE:
-    'Optional. Ermöglicht Prowlarr, seine Indexer mit Lidarr zu synchronisieren. Auswahl unter Apps verbinden.',
-  pl_PL:
-    'Opcjonalne. Pozwala Prowlarr synchronizować indeksatory z Lidarr. Wybierane w Połącz aplikacje.',
-  fr_FR:
-    'Optionnel. Permet à Prowlarr de synchroniser ses indexeurs avec Lidarr. À sélectionner dans Connecter les applications.',
-}
-
 export const byparrDescription = {
   en_US:
-    'Optional. Lets Prowlarr reach indexers behind Cloudflare challenges. Selected in Connect Apps.',
+    'Optional. Lets Prowlarr reach indexers behind Cloudflare challenges. Enabled with Connect Byparr.',
   es_ES:
-    'Opcional. Permite que Prowlarr acceda a indexadores protegidos por desafíos de Cloudflare. Se selecciona en Conectar aplicaciones.',
+    'Opcional. Permite que Prowlarr acceda a indexadores protegidos por desafíos de Cloudflare. Se activa con Conectar Byparr.',
   de_DE:
-    'Optional. Ermöglicht Prowlarr den Zugriff auf Indexer hinter Cloudflare-Prüfungen. Auswahl unter Apps verbinden.',
+    'Optional. Ermöglicht Prowlarr den Zugriff auf Indexer hinter Cloudflare-Prüfungen. Aktivierung über Byparr verbinden.',
   pl_PL:
-    'Opcjonalne. Pozwala Prowlarr korzystać z indeksatorów chronionych wyzwaniami Cloudflare. Wybierane w Połącz aplikacje.',
+    'Opcjonalne. Pozwala Prowlarr korzystać z indeksatorów chronionych wyzwaniami Cloudflare. Włączane w Połącz Byparr.',
   fr_FR:
-    'Optionnel. Permet à Prowlarr d’accéder aux indexeurs protégés par des défis Cloudflare. À sélectionner dans Connecter les applications.',
+    'Optionnel. Permet à Prowlarr d’accéder aux indexeurs protégés par des défis Cloudflare. À activer avec Connecter Byparr.',
 }
 
 export const nzbgetDescription = {

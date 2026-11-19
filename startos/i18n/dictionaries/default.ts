@@ -24,11 +24,13 @@ const dict = {
   Username: 13,
   Password: 14,
 
-  // actions/connectApps.ts
-  Apps: 15,
-  'Apps on this server that Prowlarr keeps in sync with its indexers, and Byparr, which gets Prowlarr past Cloudflare challenges. Deselecting an app removes it from Prowlarr.': 16,
-  'Connect Apps': 17,
-  'Choose which apps on this server Prowlarr syncs its indexers to, and whether it solves Cloudflare challenges through Byparr. Changing the selection restarts Prowlarr.': 18,
+  // actions/connectByparr.ts
+  'Disconnect Byparr': 15,
+  'Connect Byparr': 16,
+  'Solve Cloudflare challenges for indexers tagged byparr through Byparr. Changing the connection restarts Prowlarr.': 17,
+  'Removes the Byparr indexer proxy; tagged indexers connect directly again.': 18,
+
+  // actions/connectNzbget.ts, actions/connectQbittorrent.ts
   'Disconnect NZBGet': 19,
   'Connect NZBGet': 20,
   'Send manual Usenet grabs from Prowlarr to NZBGet. Changing the connection restarts Prowlarr.': 21,

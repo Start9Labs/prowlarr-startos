@@ -1,22 +1,9 @@
-import { T } from '@start9labs/start-sdk'
+import { z } from '@start9labs/start-sdk'
 import {
   ArrApi,
   downloadClientAddressFields,
   reconcileArrDownloadClient,
 } from 'nzbget-startos/startos/utils'
-import {
-  uiHostId as lidarrHostId,
-  uiPort as lidarrPort,
-} from 'lidarr-startos/startos/utils'
-import {
-  uiHostId as radarrHostId,
-  uiPort as radarrPort,
-} from 'radarr-startos/startos/utils'
-import {
-  uiHostId as sonarrHostId,
-  uiPort as sonarrPort,
-} from 'sonarr-startos/startos/utils'
-import { storeJson } from './fileModels/store.json'
 
 export const uiPort = 9696
 export const uiHostId = 'ui-multi'
@@ -24,20 +11,33 @@ export const adminUsername = 'admin'
 export const byparrHostId = 'api'
 export const byparrPort = 8191
 
-export const arrApps = [
-  { id: 'sonarr', name: 'Sonarr', hostId: sonarrHostId, port: sonarrPort },
-  { id: 'radarr', name: 'Radarr', hostId: radarrHostId, port: radarrPort },
-  { id: 'lidarr', name: 'Lidarr', hostId: lidarrHostId, port: lidarrPort },
-] as const
+/** Package ids of the apps that sync from Prowlarr, keyed to their Prowlarr application implementation. */
+export const syncedApps = {
+  sonarr: 'Sonarr',
+  radarr: 'Radarr',
+  lidarr: 'Lidarr',
+} as const
 
-export type ArrId = (typeof arrApps)[number]['id']
+export type SyncedAppId = keyof typeof syncedApps
+export const syncedAppIds = Object.keys(syncedApps) as SyncedAppId[]
 
-export type ArrConnection = {
-  id: ArrId
+/** Persisted intent and ownership handed off to upgraded app packages. */
+export const legacyApplicationsShape = z
+  .partialRecord(
+    z.enum(syncedAppIds),
+    z.looseObject({ connected: z.boolean(), appId: z.number().nullable() }),
+  )
+  .catch({})
+
+/** A Prowlarr bridge address and its API key. */
+export type ProwlarrConnection = { address: string; apiKey: string }
+
+type Application = {
+  id: number
   name: string
-  selected: boolean
-  apiKey: string | null
-  address: string | null
+  implementation: string
+  syncLevel: string
+  fields: { name: string; value?: unknown }[]
 }
 
 type IndexerProxy = {
@@ -48,34 +48,105 @@ type IndexerProxy = {
   fields: { name: string; value?: unknown }[]
 }
 
-type Application = {
-  id: number
-  name: string
-  implementation: string
-  syncLevel: string
-  fields: { name: string; value?: unknown }[]
+/** Reserved name of the application record a synced app manages. */
+export function managedApplicationName(id: SyncedAppId) {
+  return `${syncedApps[id]} (StartOS)`
 }
 
-const local = `http://127.0.0.1:${uiPort}`
+export function prowlarrApi({ address, apiKey }: ProwlarrConnection): ArrApi {
+  return async <A>(path: string, method = 'GET', body?: unknown) => {
+    const res = await fetch(`http://${address}/api/v1${path}`, {
+      method,
+      headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    const text = await res.text()
+    if (!res.ok) throw new Error(`${method} ${path}: ${res.status} ${text}`)
+    return JSON.parse(text || 'null') as A
+  }
+}
 
-async function api<A>(
-  apiKey: string,
-  path: string,
-  method = 'GET',
-  body?: unknown,
-): Promise<A> {
-  const res = await fetch(`${local}/api/v1${path}`, {
-    method,
-    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
+function ownsApplication(
+  id: SyncedAppId,
+  record: Application,
+  legacyId: number | null,
+) {
+  return (
+    record.implementation === syncedApps[id] &&
+    (record.name === managedApplicationName(id) || record.id === legacyId)
+  )
+}
+
+/**
+ * Reconciles the application record a synced app keeps in Prowlarr.
+ * Matches the stored id, the migrated id, or the reserved name.
+ * An undecided connection follows migrated intent, then the reserved record.
+ * Callers must read legacy-applications.json before deciding an undecided connection.
+ * Plain implementation names do not establish StartOS ownership.
+ * Missing values preserve the record; disconnection deletes it.
+ * The caller persists the returned decision and id.
+ */
+export async function reconcileProwlarrApplication(
+  prowlarr: ProwlarrConnection,
+  app: {
+    id: SyncedAppId
+    storedId: number | null
+    connected: boolean | null
+    legacy: z.infer<typeof legacyApplicationsShape>[SyncedAppId] | null
+    values: { baseUrl: string; apiKey: string } | null
+  },
+): Promise<{ connected: boolean; appId: number | null }> {
+  const api = prowlarrApi(prowlarr)
+  const implementation = syncedApps[app.id]
+  const name = managedApplicationName(app.id)
+  const applications = await api<Application[]>('/applications')
+  const legacy = app.connected === null ? app.legacy : null
+  const current =
+    applications.find(
+      (a) => a.id === app.storedId && a.implementation === implementation,
+    ) ??
+    applications.find(
+      (a) => a.id === legacy?.appId && a.implementation === implementation,
+    ) ??
+    applications.find(
+      (a) => a.name === name && a.implementation === implementation,
+    )
+  const connected = app.connected ?? legacy?.connected ?? current !== undefined
+
+  if (!connected) {
+    if (current) await api(`/applications/${current.id}`, 'DELETE')
+    return { connected, appId: null }
+  }
+  if (!app.values) return { connected, appId: current?.id ?? null }
+
+  // Creating an enabled application tests the connection even with forceSave; updating with forceSave does not.
+  const record =
+    current ??
+    (await api<Application>('/applications?forceSave=true', 'POST', {
+      ...(await api<Application[]>('/applications/schema')).find(
+        (s) => s.implementation === implementation,
+      ),
+      name,
+      syncLevel: 'disabled',
+    }))
+  const values: Record<string, string> = {
+    prowlarrUrl: `http://${prowlarr.address}`,
+    baseUrl: app.values.baseUrl,
+    apiKey: app.values.apiKey,
+  }
+  await api(`/applications/${record.id}?forceSave=true`, 'PUT', {
+    ...record,
+    name,
+    syncLevel: 'fullSync',
+    fields: record.fields.map((f) =>
+      f.name in values ? { ...f, value: values[f.name] } : f,
+    ),
   })
-  const text = await res.text()
-  if (!res.ok) throw new Error(`${method} ${path}: ${res.status} ${text}`)
-  return JSON.parse(text || 'null')
+  return { connected, appId: record.id }
 }
 
 async function canLogIn(password: string) {
-  const res = await fetch(`${local}/login`, {
+  const res = await fetch(`http://127.0.0.1:${uiPort}/login`, {
     method: 'POST',
     body: new URLSearchParams({ username: adminUsername, password }),
     redirect: 'manual',
@@ -85,13 +156,31 @@ async function canLogIn(password: string) {
   )
 }
 
+type ManagedIds = {
+  sonarrAppId: number | null
+  radarrAppId: number | null
+  lidarrAppId: number | null
+  byparrProxyId: number | null
+  nzbgetClientId: number | null
+  qbittorrentClientId: number | null
+}
+
+/** Legacy application ids retained for adoption and uninstall cleanup. */
+export function legacyApplicationIds(stored: ManagedIds) {
+  return {
+    sonarr: stored.sonarrAppId,
+    radarr: stored.radarrAppId,
+    lidarr: stored.lidarrAppId,
+  }
+}
+
+/** Returns the managed record ids for the caller to persist. */
 export async function reconcile(
-  effects: T.Effects,
   apiKey: string,
   adminPassword: string | null,
-  prowlarrAddress: string | null,
-  connections: ArrConnection[],
-  byparr: { selected: boolean; address: string | null },
+  stored: ManagedIds,
+  installedApps: Record<SyncedAppId, boolean>,
+  byparr: { connected: boolean; address: string | null },
   nzbget: {
     connected: boolean
     credentials: { username: string; password: string } | null
@@ -102,10 +191,12 @@ export async function reconcile(
     apiKey: string | null
     address: string | null
   },
-) {
+): Promise<ManagedIds> {
+  const api = prowlarrApi({ address: `127.0.0.1:${uiPort}`, apiKey })
+
   if (adminPassword && !(await canLogIn(adminPassword))) {
-    const host = await api<object>(apiKey, '/config/host')
-    await api(apiKey, '/config/host', 'PUT', {
+    const host = await api<object>('/config/host')
+    await api('/config/host', 'PUT', {
       ...host,
       authenticationMethod: 'forms',
       authenticationRequired: 'enabled',
@@ -115,11 +206,8 @@ export async function reconcile(
     })
   }
 
-  const store = await storeJson.read().once()
-  const request: ArrApi = (path, method, body) =>
-    api(apiKey, path, method, body)
-  const nzbgetClientId = await reconcileArrDownloadClient(request, {
-    storedId: store?.nzbgetClientId ?? null,
+  const nzbgetClientId = await reconcileArrDownloadClient(api, {
+    storedId: stored.nzbgetClientId,
     name: 'NZBGet (StartOS)',
     implementation: 'Nzbget',
     connected: nzbget.connected,
@@ -134,8 +222,8 @@ export async function reconcile(
     // Must name a category seeded by NZBGet.
     defaults: { category: 'prowlarr' },
   })
-  const qbittorrentClientId = await reconcileArrDownloadClient(request, {
-    storedId: store?.qbittorrentClientId ?? null,
+  const qbittorrentClientId = await reconcileArrDownloadClient(api, {
+    storedId: stored.qbittorrentClientId,
     name: 'qBittorrent (StartOS)',
     implementation: 'QBittorrent',
     connected: qbittorrent.connected,
@@ -149,114 +237,75 @@ export async function reconcile(
           }
         : null,
   })
-  const appIds: Record<ArrId, number | null> = {
-    sonarr: store?.sonarrAppId ?? null,
-    radarr: store?.radarrAppId ?? null,
-    lidarr: store?.lidarrAppId ?? null,
-  }
-  const existing = await api<Application[]>(apiKey, '/applications')
 
-  for (const { id, name, selected, apiKey: arrKey, address } of connections) {
-    const current =
-      existing.find((a) => a.id === appIds[id]) ??
-      existing.find((a) => a.implementation === name && a.name === name)
-
-    if (!selected) {
-      if (current && current.id === appIds[id])
-        await api(apiKey, `/applications/${current.id}`, 'DELETE')
-      appIds[id] = null
-      continue
-    }
-    if (!arrKey || !address || !prowlarrAddress) continue
-
-    // Creating an enabled application tests the connection even with forceSave; updating with forceSave does not.
-    const record =
-      current ??
-      (await api<Application>(apiKey, '/applications?forceSave=true', 'POST', {
-        ...(await api<Application[]>(apiKey, '/applications/schema')).find(
-          (s) => s.implementation === name,
-        ),
-        name,
-        syncLevel: 'disabled',
-      }))
-    const values: Record<string, string> = {
-      prowlarrUrl: `http://${prowlarrAddress}`,
-      baseUrl: `http://${address}`,
-      apiKey: arrKey,
-    }
-    await api(apiKey, `/applications/${record.id}?forceSave=true`, 'PUT', {
-      ...record,
-      syncLevel: 'fullSync',
-      fields: record.fields.map((f) =>
-        f.name in values ? { ...f, value: values[f.name] } : f,
-      ),
-    })
-    appIds[id] = record.id
+  const legacyIds = legacyApplicationIds(stored)
+  const applications = await api<Application[]>('/applications')
+  for (const id of syncedAppIds) {
+    if (!applications.some((a) => a.id === legacyIds[id])) legacyIds[id] = null
+    if (installedApps[id]) continue
+    for (const record of applications)
+      if (ownsApplication(id, record, legacyIds[id]))
+        await api(`/applications/${record.id}`, 'DELETE')
+    legacyIds[id] = null
   }
 
-  let byparrProxyId = store?.byparrProxyId ?? null
-  const proxies = await api<IndexerProxy[]>(apiKey, '/indexerproxy')
+  let byparrProxyId = stored.byparrProxyId
+  const proxies = await api<IndexerProxy[]>('/indexerproxy')
   const currentProxy =
     proxies.find((p) => p.id === byparrProxyId) ??
     proxies.find(
       (p) => p.implementation === 'FlareSolverr' && p.name === 'Byparr',
     )
 
-  if (!byparr.selected) {
+  if (!byparr.connected) {
     if (currentProxy && currentProxy.id === byparrProxyId)
-      await api(apiKey, `/indexerproxy/${currentProxy.id}`, 'DELETE')
+      await api(`/indexerproxy/${currentProxy.id}`, 'DELETE')
     byparrProxyId = null
   } else if (byparr.address) {
-    const tags = await api<{ id: number; label: string }[]>(apiKey, '/tag')
+    const tags = await api<{ id: number; label: string }[]>('/tag')
     const tagId = (
       tags.find((t) => t.label === 'byparr') ??
-      (await api<{ id: number }>(apiKey, '/tag', 'POST', { label: 'byparr' }))
+      (await api<{ id: number }>('/tag', 'POST', { label: 'byparr' }))
     ).id
     const template =
       currentProxy ??
-      (await api<IndexerProxy[]>(apiKey, '/indexerproxy/schema')).find(
+      (await api<IndexerProxy[]>('/indexerproxy/schema')).find(
         (s) => s.implementation === 'FlareSolverr',
       )
     if (!template) throw new Error('Prowlarr has no FlareSolverr proxy schema')
     const record =
       currentProxy ??
-      (await api<IndexerProxy>(apiKey, '/indexerproxy?forceSave=true', 'POST', {
+      (await api<IndexerProxy>('/indexerproxy?forceSave=true', 'POST', {
         ...template,
         name: 'Byparr',
         tags: [],
       }))
-    const body = {
-      ...record,
-      name: 'Byparr',
-      tags: record.tags.includes(tagId) ? record.tags : [...record.tags, tagId],
-      fields: record.fields.map((f) =>
-        f.name === 'host' ? { ...f, value: `http://${byparr.address}/` } : f,
-      ),
-    }
     byparrProxyId = (
       await api<IndexerProxy>(
-        apiKey,
         `/indexerproxy/${record.id}?forceSave=true`,
         'PUT',
-        body,
+        {
+          ...record,
+          name: 'Byparr',
+          tags: record.tags.includes(tagId)
+            ? record.tags
+            : [...record.tags, tagId],
+          fields: record.fields.map((f) =>
+            f.name === 'host'
+              ? { ...f, value: `http://${byparr.address}/` }
+              : f,
+          ),
+        },
       )
     ).id
   }
 
-  if (
-    appIds.sonarr !== (store?.sonarrAppId ?? null) ||
-    appIds.radarr !== (store?.radarrAppId ?? null) ||
-    appIds.lidarr !== (store?.lidarrAppId ?? null) ||
-    byparrProxyId !== (store?.byparrProxyId ?? null) ||
-    nzbgetClientId !== (store?.nzbgetClientId ?? null) ||
-    qbittorrentClientId !== (store?.qbittorrentClientId ?? null)
-  )
-    await storeJson.merge(effects, {
-      sonarrAppId: appIds.sonarr,
-      radarrAppId: appIds.radarr,
-      lidarrAppId: appIds.lidarr,
-      byparrProxyId,
-      nzbgetClientId,
-      qbittorrentClientId,
-    })
+  return {
+    sonarrAppId: legacyIds.sonarr,
+    radarrAppId: legacyIds.radarr,
+    lidarrAppId: legacyIds.lidarr,
+    byparrProxyId,
+    nzbgetClientId,
+    qbittorrentClientId,
+  }
 }
