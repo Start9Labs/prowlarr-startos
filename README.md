@@ -102,7 +102,7 @@ On every start, `reconcile`:
 
 **`public/api-key`** (`FileHelper.string`): reactive init copies `main/store.json`'s nonempty `apiKey` on install, update, restore and container rebuild, and republishes it whenever that stored key changes. It does not generate a second key. A manual edit is overwritten on the next init or stored-key change.
 
-**`public/legacy-applications.json`** (`FileHelper.json`): reactive init publishes each synced app's migrated `connected` selection and retained `appId`. A fresh Prowlarr installation publishes `{}`. Consumers import `legacyApplicationsShape` from `startos/utils.ts`, read this file from their read-only `public` mount, and pass their entry as `legacy` to `reconcileProwlarrApplication`. An undecided consumer must wait for the file to exist before reconciling; a missing entry in an existing file means there is no legacy selection. The stored ids remain authoritative even when a user renamed a legacy record. A plain implementation name does not establish ownership of a manually configured remote app.
+**`public/legacy-applications.json`** (`FileHelper.json`): reactive init publishes each synced app's migrated `connected` selection and retained `appId`. A fresh Prowlarr installation publishes `{}`. Consumers import `legacyApplicationsShape` from `startos/utils.ts`, read this file from their read-only `public` mount, and pass their entry as `legacy` to `reconcileProwlarrApplication`. Consumers must wait for the file to exist before reconciling, including after an explicit connection choice; a missing entry in an existing file means there is no legacy selection. The stored ids remain authoritative even when a user renamed a legacy record. A plain implementation name does not establish ownership of a manually configured remote app.
 
 ## Dependencies
 
@@ -133,11 +133,11 @@ Shelfarr queries Prowlarr directly through this API. Its **Connect Prowlarr** ac
 Sonarr, Radarr and Lidarr each declare an optional `running` dependency on Prowlarr, enabled from their own **Connect Prowlarr** action, mount Prowlarr's `public` volume read-only for its API key, and manage their own application record through `reconcileProwlarrApplication`, exported from `startos/utils.ts` with `prowlarrApi`, `syncedApps` and `managedApplicationName`. The record:
 
 - is named `<App> (StartOS)` (`Sonarr (StartOS)`, …), implementation Sonarr/Radarr/Lidarr, sync level **Full Sync**, with `baseUrl` and `prowlarrUrl` set to the two packages' bridge addresses (`http://10.0.3.1:<assigned port>`) and the app's API key. Other fields (sync categories, tags) are left as the user set them.
-- is found by the id the app stored, by Prowlarr's migrated id while the connection is undecided, or by its reserved name, and renamed on adoption. Plain names such as `Sonarr` never establish ownership.
+- is found by the id the app stored, by Prowlarr's migrated id, or by its reserved name, and renamed on adoption. Plain names such as `Sonarr` never establish ownership.
 - is written with `forceSave=true` and created disabled first, because Prowlarr runs a connection test on creating an enabled application and rejects it when the app is stopped.
 - is deleted by the app when it disconnects, and by Prowlarr's `reconcile` whenever the app is not installed.
 
-An app updated from a release that predates this has no connection decision yet. It reads the migrated selection from `legacy-applications.json`: a selected app stays connected even if its record is missing, and an unselected app stays disconnected. Without a legacy selection it adopts an existing reserved record and otherwise stays disconnected. The app persists its decision; subsequent user choices supersede the migration snapshot.
+An app updated from a release that predates this has no connection decision yet. It reads the migrated selection from `legacy-applications.json`: a selected app stays connected even if its record is missing, and an unselected app stays disconnected. Without a legacy selection it adopts an existing reserved record and otherwise stays disconnected. The app persists its decision; subsequent user choices supersede the migration's selection but retain its record ownership.
 
 ## Installation and First-Run Flow
 
