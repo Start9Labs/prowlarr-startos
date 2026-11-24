@@ -1,41 +1,46 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
-import { storeJson } from '../fileModels/store.json'
-import { syncedAppIds } from '../utils'
 
 export const current = VersionInfo.of({
-  version: '3.0.2.5780:1',
+  version: '3.1.0.5799:0',
   releaseNotes: {
-    en_US: `Sonarr, Radarr and Lidarr now connect to Prowlarr from their own **Connect Prowlarr** action, and depend on Prowlarr instead of the other way round. Apps you already connected keep syncing once they are updated. Prowlarr removes the application record of an app you uninstall.
+    en_US: `Updated Prowlarr to 3.1.0.5799.
 
-**Connect Apps** is replaced by **Connect Byparr**; a selected Byparr stays connected.`,
-    es_ES: `Sonarr, Radarr y Lidarr ahora se conectan a Prowlarr desde su propia acción **Conectar Prowlarr** y dependen de Prowlarr, en lugar de al revés. Las aplicaciones que ya habías conectado siguen sincronizándose una vez actualizadas. Prowlarr elimina el registro de aplicación de una aplicación que desinstales.
+- New: per-indexer query timeout setting
+- Fix: Cardigann indexer definitions with multiple categories
+- Fix: MyAnonamouse results with numeric titles
 
-**Conectar aplicaciones** se sustituye por **Conectar Byparr**; un Byparr seleccionado sigue conectado.`,
-    de_DE: `Sonarr, Radarr und Lidarr verbinden sich jetzt über ihre eigene Aktion **Prowlarr verbinden** mit Prowlarr und hängen von Prowlarr ab statt umgekehrt. Bereits verbundene Apps synchronisieren nach ihrem Update weiter. Prowlarr entfernt den Anwendungseintrag einer deinstallierten App.
+[Full release notes](https://github.com/Prowlarr/Prowlarr/releases/tag/v3.1.0.5799)`,
+    es_ES: `Prowlarr actualizado a 3.1.0.5799.
 
-**Apps verbinden** wird durch **Byparr verbinden** ersetzt; ein ausgewähltes Byparr bleibt verbunden.`,
-    pl_PL: `Sonarr, Radarr i Lidarr łączą się teraz z Prowlarr własną akcją **Połącz Prowlarr** i to one zależą od Prowlarr, a nie odwrotnie. Już połączone aplikacje po aktualizacji nadal się synchronizują. Prowlarr usuwa wpis aplikacji, którą odinstalujesz.
+- Nuevo: tiempo de espera de consulta configurable por indexador
+- Corrección: definiciones de indexadores Cardigann con varias categorías
+- Corrección: resultados de MyAnonamouse con títulos numéricos
 
-**Połącz Byparr** zastępuje **Połącz aplikacje**; wybrany Byparr pozostaje połączony.`,
-    fr_FR: `Sonarr, Radarr et Lidarr se connectent désormais à Prowlarr depuis leur propre action **Connecter Prowlarr**, et dépendent de Prowlarr plutôt que l’inverse. Les applications déjà connectées continuent de se synchroniser une fois mises à jour. Prowlarr supprime l’enregistrement d’une application que vous désinstallez.
+[Notas completas de la versión](https://github.com/Prowlarr/Prowlarr/releases/tag/v3.1.0.5799)`,
+    de_DE: `Prowlarr auf 3.1.0.5799 aktualisiert.
 
-**Connecter les applications** est remplacée par **Connecter Byparr** ; un Byparr sélectionné reste connecté.`,
+- Neu: Abfrage-Timeout pro Indexer einstellbar
+- Behoben: Cardigann-Indexer-Definitionen mit mehreren Kategorien
+- Behoben: MyAnonamouse-Ergebnisse mit numerischen Titeln
+
+[Vollständige Versionshinweise](https://github.com/Prowlarr/Prowlarr/releases/tag/v3.1.0.5799)`,
+    pl_PL: `Zaktualizowano Prowlarr do 3.1.0.5799.
+
+- Nowość: limit czasu zapytania ustawiany dla każdego indeksatora
+- Poprawka: definicje indeksatorów Cardigann z wieloma kategoriami
+- Poprawka: wyniki MyAnonamouse z tytułami liczbowymi
+
+[Pełne informacje o wydaniu](https://github.com/Prowlarr/Prowlarr/releases/tag/v3.1.0.5799)`,
+    fr_FR: `Prowlarr mis à jour vers 3.1.0.5799.
+
+- Nouveau : délai d’expiration des requêtes réglable par indexeur
+- Correctif : définitions d’indexeurs Cardigann à plusieurs catégories
+- Correctif : résultats MyAnonamouse aux titres numériques
+
+[Notes de version complètes](https://github.com/Prowlarr/Prowlarr/releases/tag/v3.1.0.5799)`,
   },
   migrations: {
-    up: async ({ effects }) => {
-      const store = await storeJson.read().once()
-      if (!store) return
-      const { connectedApps, ...rest } = store as typeof store & {
-        connectedApps?: unknown
-      }
-      if (connectedApps === undefined) return
-      const selected = Array.isArray(connectedApps) ? connectedApps : []
-      await storeJson.write(effects, {
-        ...rest,
-        byparrConnected: selected.includes('byparr'),
-        legacyConnectedApps: syncedAppIds.filter((id) => selected.includes(id)),
-      })
-    },
+    up: async ({ effects }) => {},
     down: IMPOSSIBLE,
   },
 })
